@@ -1,0 +1,222 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import type { Patient } from '@/types'
+import { format } from 'date-fns'
+import { Eye, Search, UserCircle, Trash2, RefreshCw } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { deletePatient, syncPatientToHIE } from '@/actions/patients'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+
+interface PatientsTableProps {
+  patients: Patient[]
+}
+
+export function PatientsTable({ patients }: PatientsTableProps) {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Calculate age from date of birth
+  const calculateAge = (dob: string) => {
+    const today = new Date()
+    const birthDate = new Date(dob)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  // Filter patients based on search query
+  const filteredPatients = patients.filter(patient =>
+    `${patient.first_name} ${patient.last_name}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()) ||
+    patient.contact_number.includes(searchQuery)
+  )
+
+  if (patients.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <UserCircle className="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          No Patients Registered
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Get started by adding your first patient to the registry.
+          All patient data will be securely synced with the health exchange.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4 p-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search patients by name or phone..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                Patient Name
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                Age
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                Gender
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                Contact
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                Registered
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                HIE Status
+              </th>
+              <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPatients.map((patient) => (
+              <tr
+                key={patient.id}
+                className="border-b border-border transition-colors hover:bg-accent/50"
+              >
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                      {patient.first_name[0]}{patient.last_name[0]}
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">
+                        {patient.first_name} {patient.last_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        DOB: {format(new Date(patient.date_of_birth), 'MMM dd, yyyy')}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-4 text-sm text-foreground">
+                  {calculateAge(patient.date_of_birth)} years
+                </td>
+                <td className="px-4 py-4 text-sm text-foreground">
+                  {patient.gender}
+                </td>
+                <td className="px-4 py-4 text-sm text-foreground">
+                  {patient.contact_number}
+                </td>
+                <td className="px-4 py-4 text-sm text-muted-foreground">
+                  {format(new Date(patient.created_at), 'MMM dd, yyyy')}
+                </td>
+                <td className="px-4 py-4">
+                  {patient.metriport_id ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-600"></span>
+                      Synced
+                    </span>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        const toastId = toast.loading('Syncing with HIE...')
+                        try {
+                          const res = await syncPatientToHIE(patient.id)
+                          if (res.success) {
+                            toast.success('Synced successfully', { id: toastId })
+                          } else {
+                            toast.error(res.error || 'Sync failed', { id: toastId })
+                          }
+                        } catch (err) {
+                          toast.error('Sync failed', { id: toastId })
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700 hover:bg-yellow-200 transition-colors"
+                    >
+                      <RefreshCw className="h-3 w-3 animate-spin duration-3000" />
+                      Sync Now
+                    </button>
+                  )}
+                </td>
+                <td className="px-4 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Link href={`/dashboard/patients/${patient.id}`}>
+                      <button className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
+                        <Eye className="h-3 w-3" />
+                        View
+                      </button>
+                    </Link>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Patient Record?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the record for
+                            <span className="font-medium text-foreground"> {patient.first_name} {patient.last_name} </span>.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              const res = await deletePatient(patient.id)
+                              if (res.success) toast.success('Patient deleted')
+                              else toast.error('Failed to delete patient')
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {
+        filteredPatients.length === 0 && searchQuery && (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            No patients found matching &quot;{searchQuery}&quot;
+          </div>
+        )
+      }
+    </div >
+  )
+}

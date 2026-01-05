@@ -1,0 +1,1 @@
+export { ClinicalAssistant } from './ClinicalAssistant'

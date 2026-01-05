@@ -1,0 +1,140 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { UserButton } from '@clerk/nextjs'
+import { Menu, Bell } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import type { UserRole } from '@/types'
+import { cn } from '@/lib/utils'
+import { navigationItems } from './AppSidebar'
+
+interface HeaderProps {
+  userRole: UserRole
+  userName: string
+  onMenuClick?: () => void
+}
+
+const roleColors: Record<UserRole, string> = {
+  ADMIN: 'bg-purple-100 text-purple-700 border-purple-300',
+  DOCTOR: 'bg-blue-100 text-blue-700 border-blue-300',
+  NURSE: 'bg-green-100 text-green-700 border-green-300',
+  PATIENT: 'bg-slate-100 text-slate-700 border-slate-300',
+}
+
+const roleLabels: Record<UserRole, string> = {
+  ADMIN: 'Administrator',
+  DOCTOR: 'Doctor',
+  NURSE: 'Nurse',
+  PATIENT: 'Patient',
+}
+
+export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  return (
+    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+        {/* Mobile Menu Trigger */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={onMenuClick}
+              suppressHydrationWarning
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <div className="flex h-full flex-col bg-card">
+              <div className="flex h-16 items-center gap-3 border-b px-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+                  <span className="text-lg font-bold text-primary-foreground">H</span>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold">HIS Core</h2>
+                  <p className="text-xs text-muted-foreground">Medical Portal</p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto py-2">
+                <nav className="grid gap-1 px-2">
+                  {navigationItems.map((item, index) => {
+                    const Icon = item.icon
+                    return (
+                      <a
+                        key={index}
+                        href={item.href}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      >
+                        {Icon && <Icon className="h-4 w-4" />}
+                        {item.title}
+                      </a>
+                    )
+                  })}
+                </nav>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Page Title / Breadcrumb */}
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold text-foreground md:text-xl">
+            Dashboard
+          </h1>
+        </div>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-3">
+          {/* Role Badge */}
+          <div
+            className={cn(
+              'hidden rounded-full border px-3 py-1 text-xs font-medium md:block',
+              roleColors[userRole]
+            )}
+          >
+            {roleLabels[userRole]}
+          </div>
+
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
+            <span className="sr-only">Notifications</span>
+          </Button>
+
+          {/* User Profile */}
+          <div className="flex items-center gap-3" suppressHydrationWarning>
+            <div className="text-right">
+              <p className="text-sm font-medium text-foreground max-w-[100px] sm:max-w-none truncate">{userName}</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                {roleLabels[userRole]}
+              </p>
+            </div>
+            {mounted && (
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: 'h-10 w-10',
+                    userButtonTrigger: 'focus:shadow-none',
+                  },
+                }}
+              />
+            )}
+            {!mounted && (
+              <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}

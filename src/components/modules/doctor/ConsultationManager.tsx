@@ -1,0 +1,173 @@
+'use client'
+
+import { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { updateConsultation } from '@/actions/doctor'
+import { toast } from 'sonner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+interface ConsultationManagerProps {
+    isOpen: boolean
+    onClose: () => void
+    appointment: any // Type this properly
+}
+
+export function ConsultationManager({ isOpen, onClose, appointment }: ConsultationManagerProps) {
+    const [loading, setLoading] = useState(false)
+    const [notes, setNotes] = useState(appointment?.reason || '') // Pre-fill with existing reason/notes if any
+
+    // Prescription State
+    const [drugName, setDrugName] = useState('')
+    const [dosage, setDosage] = useState('')
+    const [frequency, setFrequency] = useState('')
+    const [duration, setDuration] = useState('')
+    const [instructions, setInstructions] = useState('')
+
+    const handleComplete = async () => {
+        setLoading(true)
+        try {
+            // Build prescription object if any field is filled
+            const hasPrescription = drugName || dosage
+            const prescriptionData = hasPrescription ? {
+                drugName,
+                dosage,
+                frequency,
+                duration,
+                instructions
+            } : undefined
+
+            const res = await updateConsultation(appointment.id, notes, prescriptionData)
+
+            if (res.success) {
+                toast.success('Consultation completed successfully')
+                onClose()
+            } else {
+                toast.error('Failed to save consultation')
+            }
+        } catch (err) {
+            toast.error('An error occurred')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (!appointment) return null
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Consultation: {appointment.patients?.first_name} {appointment.patients?.last_name}</DialogTitle>
+                </DialogHeader>
+
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto p-1">
+                    {/* Left Side: Patient Info */}
+                    <div className="space-y-6">
+                        <div className="rounded-lg border p-4 bg-muted/50">
+                            <h3 className="font-semibold mb-2">Patient Details</h3>
+                            <div className="text-sm space-y-1">
+                                <p><span className="text-muted-foreground">DOB:</span> {appointment.patients?.date_of_birth}</p>
+                                <p><span className="text-muted-foreground">Gender:</span> {appointment.patients?.gender}</p>
+                            </div>
+                        </div>
+
+                        <Tabs defaultValue="history">
+                            <TabsList className="w-full">
+                                <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
+                                <TabsTrigger value="vitals" className="flex-1">Vitals</TabsTrigger>
+                                <TabsTrigger value="allergies" className="flex-1">Allergies</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="history" className="border rounded-md p-4 mt-2">
+                                <p className="text-sm text-muted-foreground">No previous history recorded.</p>
+                            </TabsContent>
+                            <TabsContent value="vitals" className="border rounded-md p-4 mt-2">
+                                <p className="text-sm text-muted-foreground">BP: 120/80 (Last visit)</p>
+                            </TabsContent>
+                            <TabsContent value="allergies" className="border rounded-md p-4 mt-2">
+                                <p className="text-sm text-muted-foreground">N/A</p>
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+
+                    {/* Right Side: Clinical Input */}
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <Label>Clinical Notes / Diagnosis</Label>
+                            <Textarea
+                                placeholder="Enter findings, diagnosis, and notes..."
+                                className="h-32"
+                                value={notes}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="space-y-4 border rounded-lg p-4">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                Prescription
+                                <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                            </h3>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Drug Name</Label>
+                                    <Input
+                                        placeholder="e.g. Amoxicillin"
+                                        value={drugName}
+                                        onChange={(e) => setDrugName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Dosage</Label>
+                                    <Input
+                                        placeholder="e.g. 500mg"
+                                        value={dosage}
+                                        onChange={(e) => setDosage(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Frequency</Label>
+                                    <Input
+                                        placeholder="e.g. 1-0-1"
+                                        value={frequency}
+                                        onChange={(e) => setFrequency(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Duration</Label>
+                                    <Input
+                                        placeholder="e.g. 5 days"
+                                        value={duration}
+                                        onChange={(e) => setDuration(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Instructions</Label>
+                                <Input
+                                    placeholder="e.g. Take after food"
+                                    value={instructions}
+                                    onChange={(e) => setInstructions(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
+                    <Button onClick={handleComplete} disabled={loading}>
+                        {loading ? 'Saving...' : 'Complete Consultation'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
