@@ -27,7 +27,10 @@ import {
   Package,
   AlertTriangle,
   Receipt,
-  Wrench
+  Wrench,
+  Heart,
+  Stethoscope,
+  ClipboardList
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -97,6 +100,37 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/ai',
     icon: Brain,
   },
+  // Nursing Section
+  {
+    title: 'Vital Signs',
+    href: '/dashboard/nurse/vital-signs',
+    icon: Activity,
+  },
+  {
+    title: 'Nursing Notes',
+    href: '/dashboard/nurse/notes',
+    icon: ClipboardList,
+  },
+  {
+    title: 'Medications (MAR)',
+    href: '/dashboard/nurse/medications',
+    icon: Pill,
+  },
+  {
+    title: 'Care Plans',
+    href: '/dashboard/nurse/care-plans',
+    icon: Stethoscope,
+  },
+  {
+    title: 'Pharmacy Billing',
+    href: '/dashboard/nurse/pharmacy',
+    icon: Pill,
+  },
+  {
+    title: 'Patient Invoices',
+    href: '/dashboard/nurse/invoices',
+    icon: Receipt,
+  },
   // Operations Section
   {
     title: 'Staff Directory',
@@ -133,6 +167,11 @@ export const navigationItems: NavItem[] = [
     title: 'Billing & Payments',
     href: '/dashboard/patient/billing',
     icon: Receipt,
+  },
+  {
+    title: 'Medical Reports',
+    href: '/dashboard/patient/reports',
+    icon: FileText,
   },
 
   {
@@ -202,23 +241,37 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/pharmacy',
       '/dashboard/lab',
       '/dashboard/ot',
-      '/dashboard/doctor/reports'
+      '/dashboard/doctor/reports' // Only doctors see reports
     ].includes(item.href)
   }
 
   // Patient items
   if (userRole === 'PATIENT') {
-    // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds', '/dashboard/ot', '/dashboard/patient/reports'].includes(item.href)
+    // Patients see limited view including reports and invoices
+    return [
+      '/dashboard/appointments',
+      '/dashboard/ai',
+      '/dashboard/patient/emergency',
+      '/dashboard/patient/billing',
+      '/dashboard/patient/reports', // Patients can see their reports
+      '/dashboard/beds',
+      '/dashboard/ot'
+    ].includes(item.href)
   }
 
   // Nurse items
   if (userRole === 'NURSE') {
     return [
+      '/dashboard/nurse/vital-signs',
+      '/dashboard/nurse/notes',
+      '/dashboard/nurse/medications',
+      '/dashboard/nurse/care-plans',
+      '/dashboard/nurse/pharmacy', // Pharmacy billing for nurses
+      '/dashboard/nurse/invoices', // Patient invoices
+      '/dashboard/nurse/patients',
       '/dashboard/patients',
       '/dashboard/appointments',
       '/dashboard/pharmacy',
-      '/dashboard/ai',
       '/dashboard/beds',
       '/dashboard/lab'
     ].includes(item.href)

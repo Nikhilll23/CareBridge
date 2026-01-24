@@ -335,7 +335,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
             <OCRReportUpload
                 open={showOCR}
                 onClose={() => setShowOCR(false)}
-                patientId={appointment.patients?.id}
+                patientId={appointment.patients?.id || appointment.patient_id}
                 patientName={patientName}
                 appointmentId={appointment.id}
             />
@@ -344,7 +344,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
             <VoiceRecorder
                 open={showVoice}
                 onClose={() => setShowVoice(false)}
-                patientId={appointment.patients?.id}
+                patientId={appointment.patients?.id || appointment.patient_id}
                 patientName={patientName}
                 appointmentId={appointment.id}
             />
