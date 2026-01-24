@@ -16,7 +16,44 @@ const patientSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other']),
   contactNumber: z.string().min(10, 'Valid phone number required'),
   address: z.string().min(5, 'Address is required'),
+  govtIdType: z.string().optional(),
+  govtIdNumber: z.string().optional(),
 })
+
+async function generateUHID(): Promise<string> {
+  const year = new Date().getFullYear()
+  // Get count to generate sequence
+  const { count } = await supabaseAdmin.from('patients').select('*', { count: 'exact', head: true })
+  const sequence = (count || 0) + 1
+  // Format: HIS-2024-000001
+  return `HIS-${year}-${String(sequence).padStart(6, '0')}`
+}
+
+async function checkDuplicate(data: any) {
+  // 1. Check Govt ID if provided
+  if (data.govtIdNumber) {
+    const { data: existing } = await supabaseAdmin
+      .from('patients')
+      .select('first_name, last_name, uhid')
+      .eq('govt_id_number', data.govtIdNumber)
+      .single()
+
+    if (existing) return `Patient already exists with this Govt ID (UHID: ${existing.uhid})`
+  }
+
+  // 2. Fuzzy Match (Name + DOB) for Safety
+  const { data: fuzzy } = await supabaseAdmin
+    .from('patients')
+    .select('uhid')
+    .ilike('first_name', data.firstName)
+    .ilike('last_name', data.lastName)
+    .eq('date_of_birth', data.dateOfBirth)
+    .single()
+
+  if (fuzzy) return `Patient with identical Name and DOB already exists (UHID: ${fuzzy.uhid})`
+
+  return null
+}
 
 /**
  * Register a new patient in both Supabase and Metriport
@@ -28,7 +65,16 @@ export async function registerPatient(data: PatientFormValues) {
     // 1. Validate input data
     const validatedData = patientSchema.parse(data)
 
-    // 2. Insert patient into Supabase first (without metriport_id)
+    // 2. Check for Duplicates
+    const duplicateError = await checkDuplicate(validatedData)
+    if (duplicateError) {
+      return { success: false, error: duplicateError }
+    }
+
+    // 3. Generate UHID
+    const uhid = await generateUHID()
+
+    // 4. Insert patient into Supabase first (without metriport_id)
     const { data: patient, error: insertError } = await supabaseAdmin
       .from('patients')
       .insert({
@@ -38,6 +84,10 @@ export async function registerPatient(data: PatientFormValues) {
         gender: validatedData.gender,
         contact_number: validatedData.contactNumber,
         address: validatedData.address,
+        uhid: uhid,
+        govt_id_type: validatedData.govtIdType || null,
+        govt_id_number: validatedData.govtIdNumber || null,
+        is_verified: !!validatedData.govtIdNumber
       })
       .select()
       .single()
@@ -677,5 +727,203 @@ export async function syncPatientHealthData(metriportId: string) {
   } catch (error) {
     console.error('Error in syncPatientHealthData:', error)
     return { success: false, error: 'Internal server error during sync' }
+  }
+}
+
+/**
+ * Update patient details
+ */
+export async function updatePatient(id: string, data: Partial<PatientFormValues>) {
+  try {
+    const user = await currentUser()
+    if (!user) return { success: false, error: 'Unauthorized' }
+
+    // Validate partial data (looser check than creation)
+    const updates: any = {
+      first_name: data.firstName,
+      last_name: data.lastName,
+      date_of_birth: data.dateOfBirth,
+      gender: data.gender,
+      contact_number: data.contactNumber,
+      address: data.address,
+      govt_id_type: data.govtIdType,
+      govt_id_number: data.govtIdNumber,
+    }
+
+    // Remove undefined
+    Object.keys(updates).forEach(key => updates[key] === undefined && delete updates[key])
+
+    const { error } = await supabaseAdmin
+      .from('patients')
+      .update(updates)
+      .eq('id', id)
+
+    if (error) throw error
+
+    // Log Audit
+    await logAuditAction(
+      'UPDATE_PATIENT',
+      'PATIENTS',
+      id,
+      {
+        updatedFields: Object.keys(updates),
+        updatedBy: user.emailAddresses[0]?.emailAddress
+      }
+    )
+
+    revalidatePath('/dashboard/patients')
+    revalidatePath(`/dashboard/patients/${id}`)
+    return { success: true, message: 'Patient updated successfully' }
+  } catch (error) {
+    console.error('Update Error:', error)
+    return { success: false, error: 'Failed to update patient' }
+  }
+}
+
+/**
+ * Register an Emergency Patient (Rapid Flow)
+ * Creates a placeholder record with UHID
+ */
+export async function registerEmergencyPatient(gender: 'Male' | 'Female' | 'Other', approxAge: number = 30) {
+  try {
+    const user = await currentUser()
+
+    // 1. Generate Emergency Name
+    const randomSuffix = Math.floor(Math.random() * 10000)
+    const firstName = 'Unknown'
+    const lastName = `Emergency-${randomSuffix}`
+
+    // 2. Estimate DOB from Approx Age
+    const year = new Date().getFullYear() - approxAge
+    const dob = `${year}-01-01` // Default to Jan 1st
+
+    // 3. Generate UHID
+    const uhid = await generateUHID()
+
+    // 4. Create Emergency Patient Record
+    const { data: patient, error } = await supabaseAdmin
+      .from('patients')
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        date_of_birth: dob,
+        gender: gender,
+        contact_number: '0000000000', // Placeholder
+        address: 'Emergency Admission',
+        uhid: uhid,
+        is_verified: false
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Log Audit
+    if (user) {
+      await logAuditAction(
+        'REGISTER_EMERGENCY_PATIENT',
+        'PATIENTS',
+        patient.id,
+        {
+          patientName: `${firstName} ${lastName}`,
+          registeredBy: user.emailAddresses[0]?.emailAddress
+        }
+      )
+    }
+
+    revalidatePath('/dashboard/patients')
+    return { success: true, data: patient }
+  } catch (error) {
+    console.error('Error in registerEmergencyPatient:', error)
+    return { success: false, error: 'Failed to register emergency patient' }
+  }
+}
+
+/**
+ * Search patients by name or UHID
+ */
+export async function searchPatients(query: string) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('patients')
+      .select('id, first_name, last_name, uhid')
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,uhid.ilike.%${query}%`)
+      .limit(10)
+
+    if (error) {
+      console.error('Error searching patients:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in searchPatients:', error)
+    return []
+  }
+}
+
+
+/**
+ * Merge two patient records
+ * Moves all data from Secondary -> Primary, then deletes Secondary
+ */
+export async function mergePatients(primaryId: string, secondaryId: string) {
+  try {
+    const user = await currentUser()
+    if (!user) return { success: false, error: 'Unauthorized' }
+
+    if (primaryId === secondaryId) return { success: false, error: 'Cannot merge patient into themselves' }
+
+    // 1. Move Appointments
+    const { error: apptError } = await supabaseAdmin
+      .from('appointments')
+      .update({ patient_id: primaryId })
+      .eq('patient_id', secondaryId)
+    if (apptError) throw apptError
+
+    // 2. Move Invoices
+    const { error: invError } = await supabaseAdmin
+      .from('invoices')
+      .update({ patient_id: primaryId })
+      .eq('patient_id', secondaryId)
+    if (invError) throw invError
+
+    // 3. Move Symptoms / Clinical Data (if any generic tables exist)
+    // (Assuming patient_symptoms exists from earlier context)
+    await supabaseAdmin
+      .from('patient_symptoms')
+      .update({ patient_id: primaryId })
+      .eq('patient_id', secondaryId)
+
+    // 4. Fetch Secondary Data for Archive Log
+    const { data: secondary } = await supabaseAdmin.from('patients').select('*').eq('id', secondaryId).single()
+
+    // 5. Delete Secondary Patient
+    const { error: kError } = await supabaseAdmin
+      .from('patients')
+      .delete()
+      .eq('id', secondaryId)
+
+    if (kError) throw kError
+
+    // Log Audit
+    await logAuditAction(
+      'MERGE_PATIENTS',
+      'PATIENTS',
+      primaryId,
+      {
+        mergedFrom: secondaryId,
+        secondaryData: secondary, // Archive the data just in case
+        mergedBy: user.emailAddresses[0]?.emailAddress
+      }
+    )
+
+    revalidatePath('/dashboard/patients')
+    revalidatePath(`/dashboard/patients/${primaryId}`)
+    return { success: true, message: 'Patients merged successfully' }
+
+  } catch (error) {
+    console.error('Merge Error:', error)
+    return { success: false, error: 'Failed to merge records' }
   }
 }

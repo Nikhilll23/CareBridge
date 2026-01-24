@@ -33,7 +33,13 @@ export async function syncUser(): Promise<UserProfile | null> {
     let role = 'PATIENT' // Default
     const lowerEmail = email.toLowerCase()
 
-    if (email === 'omarhashmi494@gmail.com') {
+    // Whitelist of Admin Emails
+    // Whitelist of Admin Emails
+    const ADMIN_EMAILS = [
+      'omarhashmi494@gmail.com'
+    ]
+
+    if (ADMIN_EMAILS.includes(email)) {
       role = 'ADMIN'
     } else if (lowerEmail.startsWith('dr.') && lowerEmail.endsWith('@gmail.com')) {
       role = 'DOCTOR'
@@ -62,9 +68,14 @@ export async function syncUser(): Promise<UserProfile | null> {
       // Enforce role updates if email matches critical rules
       let shouldUpdate = false
       // Admin Rule
-      if (email === 'omarhashmi494@gmail.com' && existingUser.role !== 'ADMIN') {
+      // Admin Rule
+      if (ADMIN_EMAILS.includes(email) && existingUser.role !== 'ADMIN') {
         shouldUpdate = true
         existingUser.role = 'ADMIN'
+      } else if (existingUser.role === 'ADMIN' && !ADMIN_EMAILS.includes(email)) {
+        // Demote unauthorized admins
+        shouldUpdate = true
+        existingUser.role = 'PATIENT'
       }
       // Doctor Rule
       else if (lowerEmail.startsWith('dr.') && lowerEmail.endsWith('@gmail.com') && existingUser.role !== 'DOCTOR') {

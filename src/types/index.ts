@@ -86,6 +86,10 @@ export interface Patient {
   contact_number: string
   address: string
   metriport_id: string | null
+  uhid?: string
+  govt_id_type?: string
+  govt_id_number?: string
+  is_verified?: boolean
   created_at: string
   updated_at: string
 }
@@ -104,4 +108,6 @@ export interface PatientFormValues {
   gender: PatientGender
   contactNumber: string
   address: string
+  govtIdType?: string
+  govtIdNumber?: string
 }

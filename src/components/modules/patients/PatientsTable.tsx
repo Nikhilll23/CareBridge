@@ -4,9 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { Patient } from '@/types'
 import { format } from 'date-fns'
-import { Eye, Search, UserCircle, Trash2, RefreshCw } from 'lucide-react'
+import { Eye, Search, UserCircle, Trash2, RefreshCw, Pencil, Ambulance } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { deletePatient, syncPatientToHIE } from '@/actions/patients'
+import { deletePatient, syncPatientToHIE, registerEmergencyPatient } from '@/actions/patients'
+import { EditPatientDialog } from './EditPatientDialog'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -19,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 
 interface PatientsTableProps {
   patients: Patient[]
@@ -47,6 +49,23 @@ export function PatientsTable({ patients }: PatientsTableProps) {
     patient.contact_number.includes(searchQuery)
   )
 
+  const handleEmergencyReg = async () => {
+    const toastId = toast.loading('Creating Emergency ID...')
+    try {
+      // Defaults to Male/30 for 1-click speed. 
+      // In a real app, a mini-modal asking Gender is better, but user asked for "1-click" speed implies defaults.
+      // Better: Randomize or cycle? No, just default.
+      const res = await registerEmergencyPatient('Male', 30)
+      if (res.success) {
+        toast.success(`Created: ${res.message}`, { id: toastId })
+      } else {
+        toast.error(res.error, { id: toastId })
+      }
+    } catch (e) {
+      toast.error('Failed', { id: toastId })
+    }
+  }
+
   if (patients.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -54,25 +73,34 @@ export function PatientsTable({ patients }: PatientsTableProps) {
         <h3 className="text-lg font-semibold text-foreground mb-2">
           No Patients Registered
         </h3>
-        <p className="text-sm text-muted-foreground max-w-sm">
+        <p className="text-sm text-muted-foreground max-w-sm mb-4">
           Get started by adding your first patient to the registry.
-          All patient data will be securely synced with the health exchange.
         </p>
+        <Button variant="destructive" onClick={handleEmergencyReg}>
+          <Ambulance className="mr-2 h-4 w-4" />
+          Emergency Registration
+        </Button>
       </div>
     )
   }
 
   return (
     <div className="space-y-4 p-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search patients by name or phone..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search Bar & Actions */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search patients by name or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button variant="destructive" onClick={handleEmergencyReg} className="shadow-red-200 shadow-lg">
+          <Ambulance className="mr-2 h-4 w-4" />
+          Rapid Emergency Reg
+        </Button>
       </div>
 
       {/* Table */}
@@ -166,6 +194,13 @@ export function PatientsTable({ patients }: PatientsTableProps) {
                 </td>
                 <td className="px-4 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <EditPatientDialog patient={patient}>
+                      <button className="inline-flex items-center gap-1 rounded-md bg-secondary/50 px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary">
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </button>
+                    </EditPatientDialog>
+
                     <Link href={`/dashboard/patients/${patient.id}`}>
                       <button className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
                         <Eye className="h-3 w-3" />

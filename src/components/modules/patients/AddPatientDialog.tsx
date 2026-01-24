@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { registerPatient } from '@/actions/patients'
+import { IDScanner } from '@/components/shared/IDScanner'
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,8 @@ const patientFormSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other']),
   contactNumber: z.string().min(10, 'Valid phone number required'),
   address: z.string().min(5, 'Address is required'),
+  govtIdType: z.string().optional(),
+  govtIdNumber: z.string().optional(),
 })
 
 interface AddPatientDialogProps {
@@ -60,8 +63,19 @@ export function AddPatientDialog({ children }: AddPatientDialogProps) {
       gender: 'Male',
       contactNumber: '',
       address: '',
+      govtIdType: '',
+      govtIdNumber: '',
     },
   })
+
+  // Auto-fill form when ID is scanned
+  const handleIDVerified = (result: { type: 'PAN' | 'AADHAAR' | null, number: string | null }) => {
+    if (result.type && result.number) {
+      form.setValue('govtIdType', result.type)
+      form.setValue('govtIdNumber', result.number)
+      // Visual feedback could be added here
+    }
+  }
 
   const onSubmit = async (data: PatientFormValues) => {
     setIsSubmitting(true)
@@ -73,7 +87,7 @@ export function AddPatientDialog({ children }: AddPatientDialogProps) {
       if (result.success) {
         setSubmitSuccess(true)
         form.reset()
-        
+
         // Close dialog after showing success
         setTimeout(() => {
           setOpen(false)
@@ -120,6 +134,50 @@ export function AddPatientDialog({ children }: AddPatientDialogProps) {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* ID Verification Scanner */}
+              <div className="space-y-2">
+                <FormLabel className="font-semibold text-primary">Step 1: ID Verification (Automated)</FormLabel>
+                <IDScanner onVerified={handleIDVerified} />
+                <p className="text-xs text-muted-foreground">
+                  Upload a clear image of PAN or Aadhaar card to auto-fill details.
+                </p>
+              </div>
+
+              {/* ID Details (Auto-filled) */}
+              <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border border-dashed">
+                <FormField
+                  control={form.control}
+                  name="govtIdType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">ID Type (Auto-Detected)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. PAN" {...field} readOnly className="bg-background font-mono h-8" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="govtIdNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">ID Number (Verified)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="XXXX-XXXX-XXXX" {...field} readOnly className="bg-background font-mono h-8" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t"></span></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or Enter Manually</span></div>
+              </div>
+
+              <FormLabel className="font-semibold text-primary">Step 2: Personal Details</FormLabel>
+
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField

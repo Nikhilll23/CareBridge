@@ -1,3 +1,4 @@
+import { currentUser } from '@clerk/nextjs/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getPatientById, getNearbyAmbulances, getPatientClinicalData, getPatientDocuments } from '@/actions/patients'
@@ -6,6 +7,7 @@ import { ClinicalHistory } from '@/components/modules/patients/ClinicalHistory'
 import { MedicalDocuments } from '@/components/modules/patients/MedicalDocuments'
 import { ClinicalAssistant } from '@/components/modules/ai'
 import { PatientProfileActions } from '@/components/modules/patients/PatientProfileActions'
+import { AlertBanner } from '@/components/modules/patients/AlertBanner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -32,6 +34,7 @@ interface PageProps {
 
 export default async function PatientProfilePage({ params }: PageProps) {
   const { id } = await params
+  const user = await currentUser()
   const patient = await getPatientById(id)
 
   if (!patient) {
@@ -90,6 +93,8 @@ export default async function PatientProfilePage({ params }: PageProps) {
           metriportId={patient.metriport_id}
         />
       </div>
+
+      <AlertBanner patientId={patient.id} currentUserId={user?.id || 'sys'} />
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">

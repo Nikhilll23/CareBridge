@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   FileText,
   BarChart3,
+  Bed,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,11 @@ export const navigationItems: NavItem[] = [
     icon: Users,
   },
   // Clinical Section
+  {
+    title: 'Bed Management',
+    href: '/dashboard/beds',
+    icon: Bed,
+  },
   {
     title: 'Radiology',
     href: '/dashboard/radiology',
@@ -140,7 +146,7 @@ const shouldShowItem = (item: NavItem, role?: string) => {
 
   // Doctor items
   if (userRole === 'DOCTOR') {
-    return ['/dashboard/appointments', '/dashboard/patients', '/dashboard/radiology', '/dashboard/ai', '/dashboard/pharmacy'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/patients', '/dashboard/radiology', '/dashboard/ai', '/dashboard/pharmacy', '/dashboard/beds'].includes(item.href)
   }
 
   // Patient items
@@ -151,7 +157,7 @@ const shouldShowItem = (item: NavItem, role?: string) => {
 
   // Nurse items
   if (userRole === 'NURSE') {
-    return ['/dashboard/patients', '/dashboard/appointments', '/dashboard/pharmacy', '/dashboard/ai'].includes(item.href)
+    return ['/dashboard/patients', '/dashboard/appointments', '/dashboard/pharmacy', '/dashboard/ai', '/dashboard/beds'].includes(item.href)
   }
 
   // Default fallback for Admin (sees everything unless explicitly excluded)

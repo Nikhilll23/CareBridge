@@ -34,16 +34,21 @@ export function CornerstoneViewer({ imageUrl, className }: CornerstoneViewerProp
                 const dicomParser = await import('dicom-parser')
                 const hammer = (await import('hammerjs')).default
 
-                // Setup Cornerstone WADO Image Loader
+                // Configure WADO Image Loader
                 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
                 cornerstoneWADOImageLoader.external.dicomParser = dicomParser
 
-                // Configure WADO Image Loader
-                cornerstoneWADOImageLoader.configure({
-                    beforeSend: function (_xhr: XMLHttpRequest) {
-                        // Add custom headers if needed (e.g. Auth) - TCIA is public so none needed
+                // Explicitly configure web workers (using local file served from public/dicom-worker.js)
+                // This eliminates CORS and version mismatch issues
+                const config = {
+                    webWorkerPath: '/dicom-worker.js',
+                    taskConfiguration: {
+                        decodeTask: {
+                            initializeCodecsOnStartup: true,
+                        },
                     },
-                })
+                }
+                cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
 
                 // Setup Cornerstone Tools
                 cornerstoneTools.external.cornerstone = cornerstone
