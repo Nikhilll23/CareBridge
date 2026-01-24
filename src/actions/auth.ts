@@ -36,7 +36,10 @@ export async function syncUser(): Promise<UserProfile | null> {
     // Whitelist of Admin Emails
     // Whitelist of Admin Emails
     const ADMIN_EMAILS = [
-      'omarhashmi494@gmail.com'
+      'omarhashmi494@gmail.com',
+      '210rajdeep@gmail.com',
+      'kaustubh.neoge@somaiya.edu',
+      'ayush.s1@somaiya.edu'
     ]
 
     if (ADMIN_EMAILS.includes(email)) {
