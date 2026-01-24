@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getSurgeries, getTheaters, scheduleSurgery, updateChecklist, getChecklistStatus, logConsumption, getConsumables, saveClinicalNotes } from '@/actions/ot'
+import { getSurgeries, getTheaters, scheduleSurgery, updateChecklist, getChecklistStatus, logConsumption, getConsumables, saveClinicalNotes, getOTSchedulingResources } from '@/actions/ot'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Checkbox } from '@/components/ui/checkbox'
 import { Calendar, Activity, Syringe, ClipboardCheck, Box, User, Clock } from 'lucide-react'
 import { toast } from 'sonner'
-import { searchPatients } from '@/actions/patients' // Helper to find patient
 
 export default function OTDashboard() {
     const [surgeries, setSurgeries] = useState<any[]>([])
@@ -24,8 +23,9 @@ export default function OTDashboard() {
     // Scheduling State
     const [isBookOpen, setIsBookOpen] = useState(false)
     const [newBooking, setNewBooking] = useState({ patientId: '', theaterId: '', procedure: '', start: '', end: '', surgeon: '', anaesthetist: '', nurse: '' })
-    const [patientSearch, setPatientSearch] = useState('')
-    const [foundPatients, setFoundPatients] = useState<any[]>([])
+    const [doctors, setDoctors] = useState<any[]>([])
+    const [patientOptions, setPatientOptions] = useState<any[]>([])
+    const [userRole, setUserRole] = useState('')
 
     // Live Console State
     const [activeTab, setActiveTab] = useState('checklist')
@@ -41,6 +41,11 @@ export default function OTDashboard() {
     useEffect(() => {
         refresh()
         getTheaters().then(setTheaters)
+        getOTSchedulingResources().then(res => {
+            setDoctors(res.doctors)
+            setPatientOptions(res.patients)
+            setUserRole(res.userRole)
+        })
     }, [])
 
     const refresh = () => {
@@ -55,15 +60,12 @@ export default function OTDashboard() {
     }
 
     // --- Scheduling ---
-    const handleSearchPatient = async (q: string) => {
-        setPatientSearch(q)
-        if (q.length > 2) {
-            const res = await searchPatients(q)
-            setFoundPatients(res)
-        }
-    }
-
     const handleBook = async () => {
+        if (!newBooking.patientId || !newBooking.theaterId || !newBooking.procedure || !newBooking.start || !newBooking.surgeon) {
+            toast.error('Please fill all required fields')
+            return
+        }
+
         const res = await scheduleSurgery({
             patientId: newBooking.patientId,
             theaterId: newBooking.theaterId,
@@ -267,6 +269,10 @@ export default function OTDashboard() {
     }
 
     // --- SCHEDULER VIEW ---
+    const displayedTheaters = (userRole === 'PATIENT' || userRole === 'DOCTOR')
+        ? theaters.filter(t => surgeries.some(s => s.theater_id === t.id))
+        : theaters
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -274,104 +280,126 @@ export default function OTDashboard() {
                     <Syringe className="h-8 w-8 text-primary" />
                     Operation Theatre Manager
                 </h1>
-                <Dialog open={isBookOpen} onOpenChange={setIsBookOpen}>
-                    <DialogTrigger asChild><Button>Book Surgery</Button></DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Schedule Procedure</DialogTitle></DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label>Patient Search</Label>
-                                <Input placeholder="Type Name..." onChange={e => handleSearchPatient(e.target.value)} />
-                                {foundPatients.length > 0 && (
-                                    <div className="border rounded p-2 max-h-32 overflow-y-auto">
-                                        {foundPatients.map(p => (
-                                            <div key={p.id} className="p-1 cursor-pointer hover:bg-accent" onClick={() => { setNewBooking({ ...newBooking, patientId: p.id }); setFoundPatients([]); setPatientSearch(p.first_name) }}>
-                                                {p.first_name} {p.last_name}
-                                            </div>
-                                        ))}
+                {userRole !== 'PATIENT' && (
+                    <Dialog open={isBookOpen} onOpenChange={setIsBookOpen}>
+                        <DialogTrigger asChild><Button>Book Surgery</Button></DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Schedule Procedure</DialogTitle></DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Select Patient</Label>
+                                    <Select onValueChange={v => setNewBooking({ ...newBooking, patientId: v })}>
+                                        <SelectTrigger><SelectValue placeholder="Select Patient" /></SelectTrigger>
+                                        <SelectContent>
+                                            {patientOptions.map(p => (
+                                                <SelectItem key={p.id} value={p.id}>
+                                                    {p.first_name} {p.last_name} ({p.uhid || 'No UHID'})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Procedure Name</Label>
+                                    <Input onChange={e => setNewBooking({ ...newBooking, procedure: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Theater</Label>
+                                    <Select onValueChange={v => setNewBooking({ ...newBooking, theaterId: v })}>
+                                        <SelectTrigger><SelectValue placeholder="Select OT" /></SelectTrigger>
+                                        <SelectContent>
+                                            {theaters.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {/* Team Inputs */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Surgeon</Label>
+                                        <Select onValueChange={v => setNewBooking({ ...newBooking, surgeon: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Select Surgeon" /></SelectTrigger>
+                                            <SelectContent>
+                                                {doctors.map(d => (
+                                                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Procedure Name</Label>
-                                <Input onChange={e => setNewBooking({ ...newBooking, procedure: e.target.value })} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Theater</Label>
-                                <Select onValueChange={v => setNewBooking({ ...newBooking, theaterId: v })}>
-                                    <SelectTrigger><SelectValue placeholder="Select OT" /></SelectTrigger>
-                                    <SelectContent>
-                                        {theaters.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            {/* Team Inputs */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Surgeon</Label>
-                                    <Input onChange={e => setNewBooking({ ...newBooking, surgeon: e.target.value })} />
+                                    <div className="space-y-2">
+                                        <Label>Anaesthetist</Label>
+                                        <Select onValueChange={v => setNewBooking({ ...newBooking, anaesthetist: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Select Anaesthetist" /></SelectTrigger>
+                                            <SelectContent>
+                                                {doctors.map(d => (
+                                                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2 col-span-2">
+                                        <Label>Scrub Nurse</Label>
+                                        <Input onChange={e => setNewBooking({ ...newBooking, nurse: e.target.value })} placeholder="Enter Nurse Name" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Anaesthetist</Label>
-                                    <Input onChange={e => setNewBooking({ ...newBooking, anaesthetist: e.target.value })} />
-                                </div>
-                                <div className="space-y-2 col-span-2">
-                                    <Label>Scrub Nurse</Label>
-                                    <Input onChange={e => setNewBooking({ ...newBooking, nurse: e.target.value })} />
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Start</Label><Input type="datetime-local" onChange={e => setNewBooking({ ...newBooking, start: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>End</Label><Input type="datetime-local" onChange={e => setNewBooking({ ...newBooking, end: e.target.value })} /></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Start</Label><Input type="datetime-local" onChange={e => setNewBooking({ ...newBooking, start: e.target.value })} /></div>
+                                    <div className="space-y-2"><Label>End</Label><Input type="datetime-local" onChange={e => setNewBooking({ ...newBooking, end: e.target.value })} /></div>
+                                </div>
                             </div>
-                        </div>
-                        <DialogFooter><Button onClick={handleBook}>Schedule</Button></DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                            <DialogFooter><Button onClick={handleBook}>Schedule</Button></DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
 
             {/* Schedule Board */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {theaters.map(theater => {
-                    const theaterSurgeries = surgeries.filter(s => s.theater_id === theater.id)
-                    return (
-                        <Card key={theater.id} className="h-full">
-                            <CardHeader className="bg-muted/50 pb-2">
-                                <CardTitle className="flex justify-between items-center text-lg">
-                                    {theater.name}
-                                    <Badge variant={theater.status === 'AVAILABLE' ? 'outline' : 'secondary'}>{theater.status}</Badge>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-4 space-y-3">
-                                {theaterSurgeries.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground italic">No surgeries scheduled.</p>
-                                ) : (
-                                    theaterSurgeries.map(surgery => (
-                                        <div key={surgery.id} className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="font-semibold text-primary">{surgery.procedure_name}</span>
-                                                <Badge className={surgery.status === 'IN-PROGRESS' ? 'bg-green-600' : 'bg-blue-600'}>{surgery.status}</Badge>
-                                            </div>
-                                            <div className="text-sm space-y-1">
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <User className="h-3 w-3" /> {surgery.patients.first_name} {surgery.patients.last_name}
+            {displayedTheaters.length === 0 && (userRole === 'PATIENT' || userRole === 'DOCTOR') ? (
+                <div className="text-center py-10 text-muted-foreground">
+                    <p>No surgeries scheduled for you.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {displayedTheaters.map(theater => {
+                        const theaterSurgeries = surgeries.filter(s => s.theater_id === theater.id)
+                        return (
+                            <Card key={theater.id} className="h-full">
+                                <CardHeader className="bg-muted/50 pb-2">
+                                    <CardTitle className="flex justify-between items-center text-lg">
+                                        {theater.name}
+                                        <Badge variant={theater.status === 'AVAILABLE' ? 'outline' : 'secondary'}>{theater.status}</Badge>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-4 space-y-3">
+                                    {theaterSurgeries.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground italic">No surgeries scheduled.</p>
+                                    ) : (
+                                        theaterSurgeries.map(surgery => (
+                                            <div key={surgery.id} className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="font-semibold text-primary">{surgery.procedure_name}</span>
+                                                    <Badge className={surgery.status === 'IN-PROGRESS' ? 'bg-green-600' : 'bg-blue-600'}>{surgery.status}</Badge>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <Clock className="h-3 w-3" /> {new Date(surgery.scheduled_start).toLocaleString()}
+                                                <div className="text-sm space-y-1">
+                                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                                        <User className="h-3 w-3" /> {surgery.patients.first_name} {surgery.patients.last_name}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                                        <Clock className="h-3 w-3" /> {new Date(surgery.scheduled_start).toLocaleString()}
+                                                    </div>
                                                 </div>
+                                                <Button className="w-full mt-3" size="sm" variant="outline" onClick={() => openConsole(surgery)}>
+                                                    Open Console
+                                                </Button>
                                             </div>
-                                            <Button className="w-full mt-3" size="sm" variant="outline" onClick={() => openConsole(surgery)}>
-                                                Open Console
-                                            </Button>
-                                        </div>
-                                    ))
-                                )}
-                            </CardContent>
-                        </Card>
-                    )
-                })}
-            </div>
+                                        ))
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
+            )}
         </div>
     )
 }

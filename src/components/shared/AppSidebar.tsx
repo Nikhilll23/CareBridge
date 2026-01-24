@@ -203,7 +203,7 @@ const shouldShowItem = (item: NavItem, role?: string) => {
   // Patient items
   if (userRole === 'PATIENT') {
     // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds', '/dashboard/ot'].includes(item.href)
   }
 
   // Nurse items

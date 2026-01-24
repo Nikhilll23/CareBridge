@@ -4,14 +4,73 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 import { currentUser } from '@clerk/nextjs/server'
 
+// Helper to get patients linked to a doctor
+async function getDoctorPatientIds(userId: string, userName: string) {
+    const today = new Date().toISOString().split('T')[0]
+
+    // 1. Appointments (Past 30 days + Future)
+    const { data: appointments } = await supabaseAdmin
+        .from('appointments')
+        .select('patient_id')
+        .eq('doctor_id', userId)
+
+    // 2. Surgeries
+    // Using simple text search for name in JSON
+    const { data: surgeries } = await supabaseAdmin
+        .from('surgeries')
+        .select('patient_id')
+        .or(`team_mapping->>surgeon.eq."${userName}",team_mapping->>anaesthetist.eq."${userName}"`)
+
+    const ids = new Set<string>()
+    appointments?.forEach(a => ids.add(a.patient_id))
+    surgeries?.forEach(s => ids.add(s.patient_id))
+    return ids
+}
+
 export async function getWardStatus() {
-    const { data } = await supabaseAdmin.from('wards').select(`
+    const user = await currentUser()
+    let filterPatientIds: Set<string> | null = null
+
+    if (user) {
+        const { data: u } = await supabaseAdmin.from('users').select('role, first_name, last_name').eq('id', user.id).single()
+        if (u?.role === 'DOCTOR') {
+            filterPatientIds = await getDoctorPatientIds(user.id, `${u.first_name} ${u.last_name}`)
+        }
+    }
+
+    // Fetch Wards with Beds and Active Allocations
+    // We need to know WHO is in the bed to filter
+    const { data: wards } = await supabaseAdmin.from('wards').select(`
         *,
         beds (
-            *
+            *,
+            allocations:bed_allocations(patient_id, discharged_at)
         )
     `).order('name')
-    return data || []
+
+    if (!wards) return []
+
+    // Process & Filter
+    const processedWards = wards.map(ward => {
+        // Attach active patient_id to bed for easier filtering
+        const beds = ward.beds.map((bed: any) => {
+            const active = bed.allocations?.find((a: any) => !a.discharged_at)
+            return {
+                ...bed,
+                active_patient_id: active?.patient_id || null
+            }
+        })
+
+        if (filterPatientIds) {
+            // Doctor View: Only show wards that have at least one of their patients
+            const hasMyPatient = beds.some((b: any) => b.active_patient_id && filterPatientIds!.has(b.active_patient_id))
+            if (!hasMyPatient) return null
+        }
+
+        return { ...ward, beds }
+    }).filter(Boolean)
+
+    return processedWards
 }
 
 // Get all patients for dropdown selection
