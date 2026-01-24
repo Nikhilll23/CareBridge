@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Calendar as CalendarIcon, Clock, User, FileText } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
@@ -43,6 +43,7 @@ interface ScheduleDialogProps {
   patients: Patient[]
   doctors: Doctor[]
   onSuccess?: () => void
+  userRole?: string
 }
 
 // Time slots from 9 AM to 5 PM
@@ -52,7 +53,7 @@ const TIME_SLOTS = [
   '15:00', '15:30', '16:00', '16:30', '17:00',
 ]
 
-export function ScheduleDialog({ patients, doctors, onSuccess }: ScheduleDialogProps) {
+export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: ScheduleDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [date, setDate] = useState<Date>()
@@ -63,6 +64,13 @@ export function ScheduleDialog({ patients, doctors, onSuccess }: ScheduleDialogP
     reason: '',
     notes: '',
   })
+
+  // Auto-select patient if user is a patient
+  useEffect(() => {
+    if (userRole === 'PATIENT' && patients.length === 1 && !formData.patientId) {
+      setFormData(prev => ({ ...prev, patientId: patients[0].id }))
+    }
+  }, [userRole, patients, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,6 +144,7 @@ export function ScheduleDialog({ patients, doctors, onSuccess }: ScheduleDialogP
             <Select
               value={formData.patientId}
               onValueChange={(value) => setFormData({ ...formData, patientId: value })}
+              disabled={userRole === 'PATIENT'}
             >
               <SelectTrigger id="patient">
                 <SelectValue placeholder="Select a patient" />

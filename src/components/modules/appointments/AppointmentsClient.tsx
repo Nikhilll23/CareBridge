@@ -37,9 +37,10 @@ interface AppointmentsClientProps {
   }
   patients: Patient[]
   doctors: Doctor[]
+  userRole?: string
 }
 
-export function AppointmentsClient({ appointments, stats, patients, doctors }: AppointmentsClientProps) {
+export function AppointmentsClient({ appointments, stats, patients, doctors, userRole }: AppointmentsClientProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -50,7 +51,7 @@ export function AppointmentsClient({ appointments, stats, patients, doctors }: A
             Manage patient consultations and OPD scheduling
           </p>
         </div>
-        <ScheduleDialog patients={patients} doctors={doctors} />
+        <ScheduleDialog patients={patients} doctors={doctors} userRole={userRole} />
       </div>
 
       {/* Stats Cards */}

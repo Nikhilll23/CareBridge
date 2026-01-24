@@ -243,14 +243,29 @@ export async function createAppointment(data: z.infer<typeof appointmentSchema>)
     // Validate input
     const validatedData = appointmentSchema.parse(data)
 
-    // Check if user has permission (Admin or Doctor)
+    // Check permissions
     const { data: userData } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (!userData || !['ADMIN', 'DOCTOR'].includes(userData.role)) {
+    if (!userData) {
+      return { success: false, error: 'User not found' }
+    }
+
+    // If patient, verify they are booking for themselves
+    if (userData.role === 'PATIENT') {
+      const { data: patientData } = await supabaseAdmin
+        .from('patients')
+        .select('id')
+        .eq('email', user.emailAddresses[0]?.emailAddress)
+        .single()
+
+      if (!patientData || patientData.id !== validatedData.patientId) {
+        return { success: false, error: 'You can only book appointments for yourself' }
+      }
+    } else if (!['ADMIN', 'DOCTOR'].includes(userData.role)) {
       return { success: false, error: 'You do not have permission to create appointments' }
     }
 
