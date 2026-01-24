@@ -83,6 +83,11 @@ export const navigationItems: NavItem[] = [
     icon: Pill,
   },
   {
+    title: 'Reports',
+    href: '/dashboard/doctor/reports',
+    icon: FileText,
+  },
+  {
     title: 'Emergency',
     href: '/dashboard/patient/emergency',
     icon: Map,
@@ -196,14 +201,15 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/ai',
       '/dashboard/pharmacy',
       '/dashboard/lab',
-      '/dashboard/ot'
+      '/dashboard/ot',
+      '/dashboard/doctor/reports'
     ].includes(item.href)
   }
 
   // Patient items
   if (userRole === 'PATIENT') {
     // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds', '/dashboard/ot'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds', '/dashboard/ot', '/dashboard/patient/reports'].includes(item.href)
   }
 
   // Nurse items
@@ -218,8 +224,24 @@ const shouldShowItem = (item: NavItem, role?: string) => {
     ].includes(item.href)
   }
 
-  // Default fallback for Admin (sees everything unless explicitly excluded)
-  if (userRole === 'ADMIN') return true
+  // Receptionist items
+  if (userRole === 'RECEPTIONIST') {
+    return [
+      '/dashboard/receptionist',
+      '/dashboard/receptionist/appointments',
+      '/dashboard/receptionist/billing',
+      '/dashboard/receptionist/payments',
+      '/dashboard/patients',
+      '/dashboard/appointments'
+    ].includes(item.href)
+  }
+
+  // Default fallback for Admin (sees everything except AI Assistant)
+  if (userRole === 'ADMIN') {
+    // Admins don't need AI Assistant - it's for doctors and patients
+    if (item.href === '/dashboard/ai') return false
+    return true
+  }
 
   return false
 }

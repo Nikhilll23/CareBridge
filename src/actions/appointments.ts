@@ -90,8 +90,8 @@ export async function getAppointments(filters?: {
       }
 
       query = query.eq('patient_id', patientProfile.id)
-    } else if (userData?.role === 'ADMIN') {
-      // Admin sees all
+    } else if (userData?.role === 'ADMIN' || userData?.role === 'RECEPTIONIST') {
+      // Admin and Receptionist see all appointments
     } else {
       return { success: false, error: 'Unauthorized access', data: [] }
     }

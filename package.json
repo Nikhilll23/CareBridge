@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@metriport/api-sdk": "^18.5.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -45,6 +46,7 @@
     "googleapis": "^169.0.0",
     "groq-sdk": "^0.37.0",
     "hammerjs": "^2.0.8",
+    "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",

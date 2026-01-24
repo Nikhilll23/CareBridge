@@ -52,7 +52,10 @@ export function AppointmentsClient({ appointments, stats, patients, doctors, use
             Manage patient consultations and OPD scheduling
           </p>
         </div>
-        <ScheduleDialog patients={patients} doctors={doctors} userRole={userRole} />
+        {/* Only show schedule button for non-doctors (receptionist, admin, patient) */}
+        {userRole !== 'DOCTOR' && (
+          <ScheduleDialog patients={patients} doctors={doctors} userRole={userRole} />
+        )}
       </div>
 
       {/* Stats Cards */}

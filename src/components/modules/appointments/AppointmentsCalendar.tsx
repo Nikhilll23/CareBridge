@@ -16,15 +16,18 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface Appointment {
   id: string
-  scheduled_time: string
+  appointment_date: string
   status: string
+  reason?: string
   notes?: string
-  patients?: {
+  patient?: {
     first_name: string
     last_name: string
+    contact_number: string
   }
-  users?: {
+  doctor?: {
     full_name: string
+    email: string
   }
 }
 
@@ -71,31 +74,31 @@ export function AppointmentsCalendar({ appointments }: AppointmentsCalendarProps
     const monthEnd = endOfMonth(currentMonth)
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 })
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
-    
+
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd })
   }, [currentMonth])
 
   // Group appointments by date
   const appointmentsByDate = useMemo(() => {
     const grouped: Record<string, Appointment[]> = {}
-    
+
     appointments.forEach(apt => {
-      // Skip appointments with invalid or missing scheduled_time
-      if (!apt.scheduled_time) return
-      
-      const date = typeof apt.scheduled_time === 'string' 
-        ? parseISO(apt.scheduled_time) 
-        : new Date(apt.scheduled_time)
-      
+      // Skip appointments with invalid or missing appointment_date
+      if (!apt.appointment_date) return
+
+      const date = typeof apt.appointment_date === 'string'
+        ? parseISO(apt.appointment_date)
+        : new Date(apt.appointment_date)
+
       if (!isValid(date)) return
-      
+
       const dateKey = format(date, 'yyyy-MM-dd')
       if (!grouped[dateKey]) {
         grouped[dateKey] = []
       }
       grouped[dateKey].push(apt)
     })
-    
+
     return grouped
   }, [appointments])
 
@@ -187,9 +190,9 @@ export function AppointmentsCalendar({ appointments }: AppointmentsCalendarProps
                         'text-xs px-1.5 py-0.5 rounded truncate text-white',
                         statusColors[apt.status] || 'bg-gray-500'
                       )}
-                      title={`${safeFormatDate(apt.scheduled_time, 'h:mm a')} - ${apt.patients?.first_name || 'Patient'}`}
+                      title={`${safeFormatDate(apt.appointment_date, 'h:mm a')} - ${apt.patient?.first_name || 'Patient'}`}
                     >
-                      {safeFormatDate(apt.scheduled_time, 'h:mm a')}
+                      {safeFormatDate(apt.appointment_date, 'h:mm a')}
                     </div>
                   ))}
                   {dayAppointments.length > 3 && (
@@ -253,27 +256,27 @@ export function AppointmentsCalendar({ appointments }: AppointmentsCalendarProps
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">
-                          {safeFormatDate(apt.scheduled_time, 'h:mm a')}
+                          {safeFormatDate(apt.appointment_date, 'h:mm a')}
                         </span>
                       </div>
                       <Badge variant={statusBadgeVariants[apt.status] || 'default'}>
                         {apt.status?.replace('_', ' ') || 'Unknown'}
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span>
-                        {apt.patients 
-                          ? `${apt.patients.first_name} ${apt.patients.last_name}`
+                        {apt.patient
+                          ? `${apt.patient.first_name} ${apt.patient.last_name}`
                           : 'Unknown Patient'
                         }
                       </span>
                     </div>
 
-                    {apt.users && (
+                    {apt.doctor && (
                       <div className="text-sm text-muted-foreground">
-                        Doctor: {apt.users.full_name}
+                        Doctor: {apt.doctor.full_name}
                       </div>
                     )}
 

@@ -3,7 +3,7 @@
 // =====================================================
 
 // User Role Enum (matches Supabase enum)
-export type UserRole = 'ADMIN' | 'DOCTOR' | 'NURSE' | 'PATIENT'
+export type UserRole = 'ADMIN' | 'DOCTOR' | 'NURSE' | 'PATIENT' | 'RECEPTIONIST'
 
 // User Interface (matches Supabase users table)
 export interface User {
