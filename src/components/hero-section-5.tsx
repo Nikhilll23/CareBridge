@@ -6,7 +6,7 @@ import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { ProgressiveBlur } from '@/components/ui/progressive-blur'
 import { cn } from '@/lib/utils'
 import { Menu, X, ChevronRight } from 'lucide-react'
-import { useScroll, motion } from 'motion/react'
+import { useScroll, motion } from 'framer-motion'
 import { TestimonialsColumn } from "@/components/testimonials-columns-1"
 import Experience from "@/components/ui/experience"
 import HospitalBentoShowcase from "@/components/hospital-bento-showcase"
@@ -19,22 +19,22 @@ import { Footer } from './footer-section'
 export function HeroSection() {
 
     const abilities = [
-  {
-    imgPath: seoImage,
-    title: "Quality Focus",
-    desc: "Delivering high-quality results while maintaining attention to every detail.",
-  },
-  {
-    imgPath: chatImage,
-    title: "Reliable Communication",
-    desc: "Keeping you updated at every step to ensure transparency and clarity.",
-  },
-  {
-    imgPath: timeImage,
-    title: "On-Time Delivery",
-    desc: "Making sure projects are completed on schedule, with quality & attention to detail.",
-  },
-];
+        {
+            imgPath: seoImage,
+            title: "Quality Focus",
+            desc: "Delivering high-quality results while maintaining attention to every detail.",
+        },
+        {
+            imgPath: chatImage,
+            title: "Reliable Communication",
+            desc: "Keeping you updated at every step to ensure transparency and clarity.",
+        },
+        {
+            imgPath: timeImage,
+            title: "On-Time Delivery",
+            desc: "Making sure projects are completed on schedule, with quality & attention to detail.",
+        },
+    ];
 
 
     return (
@@ -61,10 +61,10 @@ export function HeroSection() {
                         <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
                                 <h1 className="mt-8 max-w-2xl text-balance font-outfit text-5xl font-bold tracking-tight md:text-6xl lg:mt-16 xl:text-7xl">
-                                Hospital Information System
+                                    Hospital Information System
                                 </h1>
                                 <p className="mt-8 max-w-2xl text-white text-balance font-inter text-lg font-light leading-relaxed tracking-wide text-muted-foreground">
-Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure platform. Get real-time visibility into patients, resources, and revenue—without operational chaos.
+                                    Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure platform. Get real-time visibility into patients, resources, and revenue—without operational chaos.
                                 </p>
 
                                 <div className="mt-12 flex flex-col items-center justify-center gap-2 sm:flex-row lg:justify-start">
@@ -105,7 +105,7 @@ Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure 
                                     speedOnHover={20}
                                     speed={40}
                                     gap={112}>
-                                  
+
 
                                     <div className="flex items-center justify-center">
                                         <img
@@ -152,7 +152,7 @@ Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure 
                                             width="auto"
                                         />
                                     </div>
-                                
+
                                 </InfiniteSlider>
 
                                 <div className="bg-linear-to-r from-background absolute inset-y-0 left-0 w-20"></div>
@@ -171,9 +171,9 @@ Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure 
                         </div>
                     </div>
                     <div>
-                      
 
-{/*                       
+
+                        {/*                       
    <div className='flex flex-col  text-8xl items-center abhaya-extrabold'>
   <div className='relative tracking-wider left-36'>
     <div className='text-white relative right-56'>Crafting Worlds.</div>
@@ -210,54 +210,54 @@ Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure 
 }
 
 const testimonials = [
-  {
-    text: "The HIS unified OPD, IPD, diagnostics, pharmacy, and billing into a single workflow. Real-time visibility across departments has significantly reduced delays and manual errors.",
-    image: "https://randomuser.me/api/portraits/men/45.jpg",
-    name: "Dr. Michael Reynolds",
-    role: "Medical Director",
-  },
-  {
-    text: "Bed occupancy, OT utilization, and revenue dashboards are now available in real time. This has helped hospital leadership make faster, data-driven decisions.",
-    image: "https://randomuser.me/api/portraits/women/52.jpg",
-    name: "Emily Carter",
-    role: "Hospital Administrator",
-  },
-  {
-    text: "Integrated billing and insurance workflows helped us reduce revenue leakage and improve claim turnaround time. Audit trails and approvals are a big plus.",
-    image: "https://randomuser.me/api/portraits/men/61.jpg",
-    name: "David Thompson",
-    role: "Director of Finance & Revenue Cycle",
-  },
-  {
-    text: "Clinicians now have a unified EMR with complete patient history across OPD, IPD, lab, and radiology. This has improved clinical coordination and patient safety.",
-    image: "https://randomuser.me/api/portraits/women/34.jpg",
-    name: "Dr. Sarah Mitchell",
-    role: "Senior Consultant Physician",
-  },
-  {
-    text: "Nursing workflows, medication orders, and discharge processes are now fully digitized. This has reduced paperwork and improved turnaround times on the floor.",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-    name: "Laura Bennett",
-    role: "Chief Nursing Officer",
-  },
-  {
-    text: "The system aligns well with accreditation and documentation requirements and provides detailed audit logs. Compliance and data security were key factors for us.",
-    image: "https://randomuser.me/api/portraits/men/72.jpg",
-    name: "Mark Anderson",
-    role: "Director of Quality & Compliance",
-  },
-  {
-    text: "Pharmacy inventory, consumable tracking, and charge capture are tightly integrated with clinical workflows, ensuring accurate billing and stock control.",
-    image: "https://randomuser.me/api/portraits/men/18.jpg",
-    name: "James Walker",
-    role: "Pharmacy Operations Manager",
-  },
-  {
-    text: "The HIS scaled smoothly across multiple departments and locations. Configuration flexibility allowed us to match our existing hospital processes.",
-    image: "https://randomuser.me/api/portraits/women/41.jpg",
-    name: "Rachel Morgan",
-    role: "Chief Information Officer (CIO)",
-  },
+    {
+        text: "The HIS unified OPD, IPD, diagnostics, pharmacy, and billing into a single workflow. Real-time visibility across departments has significantly reduced delays and manual errors.",
+        image: "https://randomuser.me/api/portraits/men/45.jpg",
+        name: "Dr. Michael Reynolds",
+        role: "Medical Director",
+    },
+    {
+        text: "Bed occupancy, OT utilization, and revenue dashboards are now available in real time. This has helped hospital leadership make faster, data-driven decisions.",
+        image: "https://randomuser.me/api/portraits/women/52.jpg",
+        name: "Emily Carter",
+        role: "Hospital Administrator",
+    },
+    {
+        text: "Integrated billing and insurance workflows helped us reduce revenue leakage and improve claim turnaround time. Audit trails and approvals are a big plus.",
+        image: "https://randomuser.me/api/portraits/men/61.jpg",
+        name: "David Thompson",
+        role: "Director of Finance & Revenue Cycle",
+    },
+    {
+        text: "Clinicians now have a unified EMR with complete patient history across OPD, IPD, lab, and radiology. This has improved clinical coordination and patient safety.",
+        image: "https://randomuser.me/api/portraits/women/34.jpg",
+        name: "Dr. Sarah Mitchell",
+        role: "Senior Consultant Physician",
+    },
+    {
+        text: "Nursing workflows, medication orders, and discharge processes are now fully digitized. This has reduced paperwork and improved turnaround times on the floor.",
+        image: "https://randomuser.me/api/portraits/women/68.jpg",
+        name: "Laura Bennett",
+        role: "Chief Nursing Officer",
+    },
+    {
+        text: "The system aligns well with accreditation and documentation requirements and provides detailed audit logs. Compliance and data security were key factors for us.",
+        image: "https://randomuser.me/api/portraits/men/72.jpg",
+        name: "Mark Anderson",
+        role: "Director of Quality & Compliance",
+    },
+    {
+        text: "Pharmacy inventory, consumable tracking, and charge capture are tightly integrated with clinical workflows, ensuring accurate billing and stock control.",
+        image: "https://randomuser.me/api/portraits/men/18.jpg",
+        name: "James Walker",
+        role: "Pharmacy Operations Manager",
+    },
+    {
+        text: "The HIS scaled smoothly across multiple departments and locations. Configuration flexibility allowed us to match our existing hospital processes.",
+        image: "https://randomuser.me/api/portraits/women/41.jpg",
+        name: "Rachel Morgan",
+        role: "Chief Information Officer (CIO)",
+    },
 ];
 
 const firstColumn = testimonials.slice(0, 3);
@@ -265,36 +265,36 @@ const secondColumn = testimonials.slice(3, 6);
 const thirdColumn = testimonials.slice(6, 9);
 
 const Testimonials = () => {
-  return (
-    <section className="bg-background py-12">
-      <div className="container z-10 mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          viewport={{ once: true }}
-          className="flex flex-col items-center justify-center max-w-135 mx-auto"
-        >
-          <div className="flex justify-center">
-            <div className="border py-1  px-4 rounded-lg">Testimonials</div>
-          </div>
+    return (
+        <section className="bg-background py-12">
+            <div className="container z-10 mx-auto">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                    viewport={{ once: true }}
+                    className="flex flex-col items-center justify-center max-w-135 mx-auto"
+                >
+                    <div className="flex justify-center">
+                        <div className="border py-1  px-4 rounded-lg">Testimonials</div>
+                    </div>
 
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tighter mt-5">
-            What our users say
-          </h2>
-          <p className="text-center mt-5 opacity-75">
-            See what our customers have to say about us.
-          </p>
-        </motion.div>
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tighter mt-5">
+                        What our users say
+                    </h2>
+                    <p className="text-center mt-5 opacity-75">
+                        See what our customers have to say about us.
+                    </p>
+                </motion.div>
 
-        <div className="flex justify-center gap-6 mt-10 mask-[linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-185 overflow-hidden">
-          <TestimonialsColumn testimonials={firstColumn} duration={15} />
-          <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
-          <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />
-        </div>
-      </div>
-    </section>
-  );
+                <div className="flex justify-center gap-6 mt-10 mask-[linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-185 overflow-hidden">
+                    <TestimonialsColumn testimonials={firstColumn} duration={15} />
+                    <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
+                    <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />
+                </div>
+            </div>
+        </section>
+    );
 };
 
 const menuItems = [
