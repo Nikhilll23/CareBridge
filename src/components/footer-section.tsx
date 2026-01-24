@@ -60,8 +60,8 @@ export function Footer() {
 			<div className="bg-foreground/20 absolute top-0 right-1/2 left-1/2 h-px w-1/3 -translate-x-1/2 -translate-y-1/2 rounded-full blur" />
 
 			<div className="w-full px-6">
-				<div className="max-w-7xl mx-auto flex flex-col gap-8 xl:flex-row xl:justify-between xl:items-start">
-					<AnimatedContainer className="space-y-2 flex flex-col items-start justify-start">
+				<div className="max-w-7xl mx-auto flex flex-col gap-12 xl:flex-row xl:justify-between xl:items-start">
+					<AnimatedContainer className="space-y-2 flex flex-col items-start justify-start xl:flex-shrink-0">
 						<div className="flex items-center gap-2">
 							<FrameIcon className="size-6" />
 							<span className="font-bold">Asme</span>
@@ -71,7 +71,7 @@ export function Footer() {
 						</p>
 					</AnimatedContainer>
 
-					<div className="grid grid-cols-2 gap-8 md:grid-cols-4 xl:flex xl:gap-12 xl:justify-end">
+					<div className="grid grid-cols-2 gap-8 md:grid-cols-4 xl:flex xl:flex-1 xl:justify-evenly">
 						{footerLinks.map((section, index) => (
 							<AnimatedContainer key={section.label} delay={0.1 + index * 0.1}>
 								<div className="flex flex-col gap-2">

@@ -63,7 +63,7 @@ export function HeroSection() {
                                 <h1 className="mt-8 max-w-2xl text-balance font-outfit text-5xl font-bold tracking-tight md:text-6xl lg:mt-16 xl:text-7xl">
                                 Hospital Information System
                                 </h1>
-                                <p className="mt-8 text-white max-w-2xl text-balance font-inter text-lg font-light leading-relaxed tracking-wide text-muted-foreground">
+                                <p className="mt-8 max-w-2xl text-white text-balance font-inter text-lg font-light leading-relaxed tracking-wide text-muted-foreground">
 Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure platform. Get real-time visibility into patients, resources, and revenue—without operational chaos.
                                 </p>
 
@@ -92,49 +92,49 @@ Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure 
                         </div>
                     </div>
                 </section>
-                <section className="bg-background ">
+                <section className="bg-background pb-2">
                     <div className="group relative m-auto max-w-7xl px-6">
                         <div className="flex flex-col items-center md:flex-row">
                             <div className="md:max-w-44 md:border-r md:pr-6">
-                                <p className="text-end font-inter text-sm font-medium relative bottom-12 tracking-wide text-muted-foreground">
+                                <p className="text-end font-inter text-sm font-medium tracking-wide text-muted-foreground">
                                     Powering the best teams
                                 </p>
                             </div>
-                            <div className="relative flex justify-center items-center relative bottom-6 py-6 mt-6 -mb-6 md:w-[calc(100%-11rem)]">
+                            <div className="flex justify-center items-center py-3 md:w-[calc(100%-11rem)]">
                                 <InfiniteSlider
                                     speedOnHover={20}
                                     speed={40}
                                     gap={112}>
                                   
 
-                                    <div className="flex">
+                                    <div className="flex items-center justify-center">
                                         <img
-                                            className="mx-auto h-26 items-center justify-center relative bottom-4 w-fit dark:invert"
+                                            className="mx-auto h-26 w-fit dark:invert"
                                             src="https://imgs.search.brave.com/NM8ojltHU6a5uxWbPCgM9_2ROylagd5KjPtJvnqmUDM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bG9nb3NoYXBlLmNv/bS93cC1jb250ZW50/L3VwbG9hZHMvMjAy/NS8wNy9OYXJheWFu/YS1IZWFsdGgtbG9n/b19sb2dvc2hhcGUu/cG5n"
                                             alt="narayan"
                                             height="16"
                                             width="auto"
                                         />
                                     </div>
-                                    <div className="flex">
+                                    <div className="flex items-center justify-center">
                                         <img
-                                            className="mx-auto h-32 justify-center items-center relative bottom-8 w-fit dark:invert"
+                                            className="mx-auto h-32 w-fit dark:invert"
                                             src="https://imgs.search.brave.com/s2uDR1cywTk5NgvFDPr-cjRfqs0XOavprOLufHZAdyo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zZWVr/dmVjdG9ycy5jb20v/c3RvcmFnZS9pbWFn/ZXMvRm9ydGlzJTIw/TG9nby5zdmc"
                                             alt="fortis"
                                             height="16"
                                             width="auto"
                                         />
                                     </div>
-                                    <div className="flex">
+                                    <div className="flex items-center justify-center">
                                         <img
-                                            className="mx-auto h-24 w-fit relative bottom-3 dark:invert"
+                                            className="mx-auto h-24 w-fit dark:invert"
                                             src="https://imgs.search.brave.com/lj1mnb4PjY785OA8vX0bpXp9n68Mji3L89vUxKqv9nU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bG9nb3NoYXBlLmNv/bS93cC1jb250ZW50/L3VwbG9hZHMvMjAy/NS8wNy9Bc3Rlci1E/TS1IZWFsdGhjYXJl/LUxvZ29fbG9nb3No/YXBlLnBuZw"
                                             alt="aster"
                                             height="20"
                                             width="auto"
                                         />
                                     </div>
-                                    <div className="flex">
+                                    <div className="flex items-center justify-center">
                                         <img
                                             className="mx-auto h-14 w-fit dark:invert"
                                             src="https://imgs.search.brave.com/NdcQINRbU30CpJB5zoad6DaBWsNM5UfJNQ_CdURzjLc/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/YnJhbmRmZXRjaC5p/by9pZFBzQXFZSkRx/L3cvMTg1L2gvMTAw/L3RoZW1lL2Rhcmsv/bG9nby5wbmc_Yz0x/YnhpZDY0TXVwN2Fj/emV3U0FZTVgmdD0x/NzY1NTQ0MDM5MjUy"
@@ -143,9 +143,9 @@ Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure 
                                             width="auto"
                                         />
                                     </div>
-                                    <div className="flex">
+                                    <div className="flex items-center justify-center">
                                         <img
-                                            className="mx-auto items-center justify-center relative bottom-5  h-28 w-fit dark:invert"
+                                            className="mx-auto h-28 w-fit dark:invert"
                                             src="https://imgs.search.brave.com/9pluDDxLIQlHEGRcPNvi5xVCxcJrWdHD10NThcSAhis/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMuc2Vla2xvZ28u/Y29tL2xvZ28tcG5n/LzMwLzMvbWVkYW50/YS10aGUtbWVkaWNp/dHktbG9nby1wbmdf/c2Vla2xvZ28tMzA0/ODk0LnBuZw"
                                             alt="medanta"
                                             height="16"
@@ -266,14 +266,14 @@ const thirdColumn = testimonials.slice(6, 9);
 
 const Testimonials = () => {
   return (
-    <section className="bg-background relative top-16 py-20">
+    <section className="bg-background py-12">
       <div className="container z-10 mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true }}
-          className="flex flex-col items-center justify-center max-w-[540px] mx-auto"
+          className="flex flex-col items-center justify-center max-w-135 mx-auto"
         >
           <div className="flex justify-center">
             <div className="border py-1  px-4 rounded-lg">Testimonials</div>
@@ -287,7 +287,7 @@ const Testimonials = () => {
           </p>
         </motion.div>
 
-        <div className="flex justify-center gap-6 mt-10 [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-[740px] overflow-hidden">
+        <div className="flex justify-center gap-6 mt-10 mask-[linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-185 overflow-hidden">
           <TestimonialsColumn testimonials={firstColumn} duration={15} />
           <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
           <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />

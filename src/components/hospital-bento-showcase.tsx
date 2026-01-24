@@ -146,7 +146,7 @@ const QuickAccessCard = () => (
 // --- The Hospital Features Demo ---
 export default function HospitalBentoShowcase() {
   return (
-    <div className="w-full bg-background/50 pt-0 pb-8 lg:pb-10 -mt-48 relative z-10">
+    <div className="w-full bg-background/50 pt-0 pb-6 lg:pb-8 relative z-10">
       <div className="mx-auto max-w-5xl px-6 md:px-8">
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold tracking-tight md:text-5xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400">
