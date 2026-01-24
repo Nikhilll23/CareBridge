@@ -10,7 +10,7 @@ import { NotificationPanel } from '@/components/shared/NotificationPanel'
 import type { UserRole } from '@/types'
 import { cn } from '@/lib/utils'
 import { navigationItems } from './AppSidebar'
-import { NotificationPanel } from '@/components/modules/notifications/NotificationPanel'
+
 
 interface HeaderProps {
   userRole: UserRole
