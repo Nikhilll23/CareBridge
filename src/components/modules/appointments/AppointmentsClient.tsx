@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { ScheduleDialog } from '@/components/modules/appointments/ScheduleDialog'
 import { AppointmentsList } from '@/components/modules/appointments/AppointmentsList'
+import { AppointmentsCalendar } from '@/components/modules/appointments/AppointmentsCalendar'
 
 interface Patient {
   id: string
@@ -161,17 +162,10 @@ export function AppointmentsClient({ appointments, stats, patients, doctors, use
           <Card>
             <CardHeader>
               <CardTitle>Calendar View</CardTitle>
-              <CardDescription>Coming soon - Visual calendar interface</CardDescription>
+              <CardDescription>Visual overview of all scheduled appointments</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Calendar className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Calendar View</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Full calendar visualization will be available in the next update.
-                  Use List View to manage appointments for now.
-                </p>
-              </div>
+              <AppointmentsCalendar appointments={appointments} />
             </CardContent>
           </Card>
         </TabsContent>
