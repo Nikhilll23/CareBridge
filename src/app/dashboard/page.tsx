@@ -75,6 +75,9 @@ export default async function DashboardPage() {
   if (userProfile.role === 'RECEPTIONIST') {
     redirect('/dashboard/receptionist')
   }
+  if (userProfile.role === 'NURSE') {
+    redirect('/dashboard/nurse')
+  }
 
   const stats = await getDashboardStats()
 
