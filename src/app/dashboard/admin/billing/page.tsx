@@ -64,11 +64,7 @@ export default function BillingDashboard() {
     }
 
     const handleAddCharge = async (item: any) => {
-<<<<<<< Updated upstream
         if (!billData?.invoice?.id) return
-=======
-        if (!billData) return
->>>>>>> Stashed changes
         await addMiscCharge(billData.invoice.id, item)
         toast.success('Charge Added')
         setTariffSearch('')
@@ -77,11 +73,7 @@ export default function BillingDashboard() {
     }
 
     const handleApplyDiscount = async () => {
-<<<<<<< Updated upstream
         if (!billData?.invoice?.id) return
-=======
-        if (!billData) return
->>>>>>> Stashed changes
         const res = await applyDiscount(billData.invoice.id, parseFloat(discountAmt), discountReason, adminRoleMock)
         if (res.success) {
             toast.success('Discount Approved & Applied')
