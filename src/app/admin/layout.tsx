@@ -15,10 +15,10 @@ export default async function AdminLayout({
   return (
     <div className="relative flex min-h-screen">
       {/* Sidebar - Fixed on desktop */}
-      <AppSidebar className="hidden md:flex" />
+      <AppSidebar userRole={userProfile.role} className="hidden md:flex" />
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 ">
         {/* Header with Admin Badge */}
         <Header 
           userRole={userProfile.role} 
