@@ -229,6 +229,7 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
 
   return (
     <motion.div
+      suppressHydrationWarning
       initial={{ width: 256 }}
       animate={{ width: isCollapsed ? 80 : 256 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
