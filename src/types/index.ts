@@ -111,3 +111,56 @@ export interface PatientFormValues {
   govtIdType?: string
   govtIdNumber?: string
 }
+// Referral Types
+export type ReferralStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
+
+export interface Referral {
+  id: string
+  patient_id: string
+  referring_doctor_id?: string
+  target_doctor_id?: string
+  target_specialization: string
+  status: ReferralStatus
+  reason: string
+  notes?: string
+  created_at: string
+  patient?: {
+    first_name: string
+    last_name: string
+  }
+  referring_doctor?: {
+    first_name: string
+    last_name: string
+  }
+  target_doctor?: {
+    first_name: string
+    last_name: string
+  }
+}
+
+export type Specialization =
+  | 'General Physician'
+  | 'Cardiologist'
+  | 'Neurologist'
+  | 'Orthopedic'
+  | 'Pediatrician'
+  | 'Dermatologist'
+  | 'ENT'
+  | 'Ophthalmologist'
+  | 'Gynecologist'
+  | 'Psychiatrist'
+  | 'Urologist'
+
+export const SPECIALIZATIONS: Specialization[] = [
+  'General Physician',
+  'Cardiologist',
+  'Neurologist',
+  'Orthopedic',
+  'Pediatrician',
+  'Dermatologist',
+  'ENT',
+  'Ophthalmologist',
+  'Gynecologist',
+  'Psychiatrist',
+  'Urologist'
+]

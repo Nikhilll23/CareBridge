@@ -420,7 +420,7 @@ export async function getDoctors() {
   try {
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, specialization')
       .eq('role', 'DOCTOR')
       .order('first_name', { ascending: true })
 
@@ -434,7 +434,8 @@ export async function getDoctors() {
       id: doctor.id,
       full_name: `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim() || doctor.email,
       email: doctor.email,
-      role: doctor.role
+      role: doctor.role,
+      specialization: doctor.specialization // Include specialization
     }))
 
     return { success: true, data: formattedDoctors }

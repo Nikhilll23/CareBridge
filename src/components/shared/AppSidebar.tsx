@@ -159,6 +159,11 @@ export const navigationItems: NavItem[] = [
   },
   // Finance Section
   {
+    title: 'Referrals',
+    href: '/dashboard/doctor/referrals',
+    icon: UserCheck, // Reusing icon or getting new one
+  },
+  {
     title: 'Billing',
     href: '/dashboard/admin/billing',
     icon: Receipt,
@@ -167,6 +172,11 @@ export const navigationItems: NavItem[] = [
     title: 'Billing & Payments',
     href: '/dashboard/patient/billing',
     icon: Receipt,
+  },
+  {
+    title: 'My Referrals',
+    href: '/dashboard/patient/referrals',
+    icon: UserCheck,
   },
   {
     title: 'Medical Reports',
@@ -241,7 +251,8 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/pharmacy',
       '/dashboard/lab',
       '/dashboard/ot',
-      '/dashboard/doctor/reports' // Only doctors see reports
+      '/dashboard/doctor/reports', // Only doctors see reports
+      '/dashboard/doctor/referrals' // Added referrals
     ].includes(item.href)
   }
 
@@ -255,7 +266,8 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/patient/billing',
       '/dashboard/patient/reports', // Patients can see their reports
       '/dashboard/beds',
-      '/dashboard/ot'
+      '/dashboard/ot',
+      '/dashboard/patient/referrals' // Added referrals
     ].includes(item.href)
   }
 

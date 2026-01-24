@@ -5,17 +5,21 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { UserProfile } from '@/types'
 import { logAuditAction } from '@/actions/audit'
 
+import { cache } from 'react';
+
 /**
  * Sync Clerk user to Supabase database
  * This ensures every authenticated user has a profile in our database
+ * Cached per request to prevent multiple DB calls
  */
-export async function syncUser(): Promise<UserProfile | null> {
+export const syncUser = cache(async (): Promise<UserProfile | null> => {
   try {
     // Get current Clerk user
     const clerkUser = await currentUser()
 
     if (!clerkUser) {
-      console.error('No authenticated user found')
+      // console.error('No authenticated user found') 
+      // Reduced log spam
       return null
     }
 
@@ -29,7 +33,7 @@ export async function syncUser(): Promise<UserProfile | null> {
       return null
     }
 
-    console.log('Syncing user:', { userId, email, firstName, lastName })
+    // console.log('Syncing user:', { userId, email, firstName, lastName })
 
     // Determine role based on email rules
     let role = 'PATIENT' // Default
@@ -87,14 +91,6 @@ export async function syncUser(): Promise<UserProfile | null> {
         shouldUpdate = true
         existingUser.role = 'DOCTOR'
       }
-      // Demote if they shouldn't be a doctor anymore?
-      // The user said "if dr is not there ahead ... then dont accept as doctor".
-      // This implies strict enforcement. If I logged in as dr.someone@hospital.com (old valid), they are now invalid? 
-      // Well, the user specifically mentioned @gmail.
-      // I will enforce: If they are marked DOCTOR but don't match the rule, demote to PATIENT?
-      // That might be aggressive for existing users if data migration isn't done.
-      // I'll stick to *promoting* to Doctor if matching. 
-      // But for "dr.sarah", she is already a USER. I need to update the DB separately.
 
       if (shouldUpdate) {
         await supabaseAdmin
@@ -104,7 +100,12 @@ export async function syncUser(): Promise<UserProfile | null> {
       }
 
       // Ensure Patient Record Exists for PATIENT role
+      // OPTIMIZATION: Check for patient existence in parallel or skip if we have a robust flow elsewhere
+      // For now, keeping it but maybe run it asynchronously/detached if possible? 
+      // Server Actions must await, so we keep it but only run if strictly necessary.
       if (existingUser.role === 'PATIENT') {
+        // Optimization: Maybe only check if we suspect missing? 
+        // Or just keep it as is, but the cache() wrapper prevents this whole block from running 5 times a page load.
         const { data: patientCheck } = await supabaseAdmin.from('patients').select('id').eq('email', email).single()
         if (!patientCheck) {
           const { error: createPatientError } = await supabaseAdmin.from('patients').insert({
@@ -120,13 +121,12 @@ export async function syncUser(): Promise<UserProfile | null> {
             console.error('Failed to auto-create patient record:', createPatientError)
           } else {
             // Audit the auto-creation
+            // Non-blocking log? no need to await strictly if we want speed, but Vercel might kill it. 
+            // Best to await.
             await logAuditAction('REGISTER_PATIENT', 'PATIENT', 'SYSTEM', { email, action: 'AUTO_CREATED_ON_LOGIN' })
           }
         }
       }
-
-      // Log removed to prevent spam on every page load (syncUser runs on every request)
-      // await logAuditAction('USER_LOGIN', 'AUTH', existingUser.id, { email: existingUser.email, role: existingUser.role })
 
       return {
         id: existingUser.id,
@@ -238,7 +238,7 @@ export async function syncUser(): Promise<UserProfile | null> {
     console.error('Sync user error:', error instanceof Error ? error.message : 'Unknown error')
     return null
   }
-}
+})
 
 /**
  * Get user profile from Supabase

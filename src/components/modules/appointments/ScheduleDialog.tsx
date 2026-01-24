@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, Clock, User, FileText } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, User, FileText, Stethoscope } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
   Dialog,
@@ -37,6 +37,7 @@ interface Doctor {
   id: string
   full_name: string
   email: string
+  specialization?: string // Added specialization
 }
 
 interface ScheduleDialogProps {
@@ -46,17 +47,24 @@ interface ScheduleDialogProps {
   userRole?: string
 }
 
-// Time slots from 9 AM to 5 PM
 const TIME_SLOTS = [
   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
   '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
   '15:00', '15:30', '16:00', '16:30', '17:00',
 ]
 
+const SPECIALIZATIONS = [
+  'General Physician', 'Cardiologist', 'Neurologist', 'Orthopedic',
+  'Pediatrician', 'Dermatologist', 'ENT', 'Ophthalmologist',
+  'Gynecologist', 'Psychiatrist', 'Urologist'
+]
+
 export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: ScheduleDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [date, setDate] = useState<Date>()
+  const [selectedSpecialization, setSelectedSpecialization] = useState<string>('all')
+
   const [formData, setFormData] = useState({
     patientId: '',
     doctorId: '',
@@ -65,7 +73,17 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     notes: '',
   })
 
-  // Auto-select patient if user is a patient
+  // Filter doctors based on selection
+  const filteredDoctors = useMemo(() => {
+    if (!selectedSpecialization || selectedSpecialization === 'all') return doctors
+    return doctors.filter(doc =>
+      // Match specialization if available, otherwise include all (fallback)
+      // Since specialization comes from DB now, we should try to match loosely or strictly
+      doc.specialization === selectedSpecialization ||
+      (!doc.specialization && selectedSpecialization === 'General Physician') // Assumption
+    )
+  }, [doctors, selectedSpecialization])
+
   useEffect(() => {
     if (userRole === 'PATIENT' && patients.length === 1 && !formData.patientId) {
       setFormData(prev => ({ ...prev, patientId: patients[0].id }))
@@ -83,7 +101,6 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     setLoading(true)
 
     try {
-      // Combine date and time
       const [hours, minutes] = formData.time.split(':')
       const appointmentDate = new Date(date)
       appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
@@ -100,6 +117,7 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
         toast.success(result.message || 'Appointment scheduled successfully!')
         setOpen(false)
         setDate(undefined)
+        setSelectedSpecialization('all')
         setFormData({
           patientId: '',
           doctorId: '',
@@ -130,7 +148,7 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
         <DialogHeader>
           <DialogTitle>Schedule New Appointment</DialogTitle>
           <DialogDescription>
-            Create a new appointment for a patient with a doctor
+            Create a new appointment for a patient
           </DialogDescription>
         </DialogHeader>
 
@@ -159,6 +177,31 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
             </Select>
           </div>
 
+          {/* Specialization Filter */}
+          <div className="space-y-2">
+            <Label>
+              <Stethoscope className="h-4 w-4 inline mr-2" />
+              Filter by Specialization
+            </Label>
+            <Select
+              value={selectedSpecialization}
+              onValueChange={(value) => {
+                setSelectedSpecialization(value)
+                setFormData(prev => ({ ...prev, doctorId: '' })) // Reset doctor selection
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Specializations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Specializations</SelectItem>
+                {SPECIALIZATIONS.map(spec => (
+                  <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Doctor Selection */}
           <div className="space-y-2">
             <Label htmlFor="doctor">
@@ -168,21 +211,22 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
             <Select
               value={formData.doctorId}
               onValueChange={(value) => setFormData({ ...formData, doctorId: value })}
+              disabled={filteredDoctors.length === 0}
             >
               <SelectTrigger id="doctor">
-                <SelectValue placeholder="Select a doctor" />
+                <SelectValue placeholder={filteredDoctors.length === 0 ? "No doctors found for this specialization" : "Select a doctor"} />
               </SelectTrigger>
               <SelectContent>
-                {doctors.map((doctor) => (
+                {filteredDoctors.map((doctor) => (
                   <SelectItem key={doctor.id} value={doctor.id}>
-                    {doctor.full_name}
+                    {doctor.full_name} {doctor.specialization ? `(${doctor.specialization})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Date and Time Selection */}
+          {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>
@@ -245,38 +289,15 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
             </Label>
             <Input
               id="reason"
-              placeholder="e.g., Regular checkup, Follow-up, Consultation"
+              placeholder="e.g., Regular checkup, Follow-up"
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               required
             />
           </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">
-              <FileText className="h-4 w-4 inline mr-2" />
-              Clinical Notes (Optional)
-            </Label>
-            <textarea
-              id="notes"
-              className="w-full min-h-25 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="Additional notes or instructions..."
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            />
-          </div>
-
-          {/* Action Buttons */}
           <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={loading}>
               {loading ? 'Scheduling...' : 'Schedule Appointment'}
             </Button>

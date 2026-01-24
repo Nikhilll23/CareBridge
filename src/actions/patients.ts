@@ -313,6 +313,9 @@ export async function getPatients(): Promise<Patient[]> {
       if (patientIds.length === 0) return []
 
       query = query.in('id', patientIds)
+    } else if (userData?.role === 'PATIENT') {
+      // If Patient, ONLY return their own record
+      query = query.eq('email', user.emailAddresses[0]?.emailAddress)
     }
 
     const { data, error } = await query
@@ -328,6 +331,7 @@ export async function getPatients(): Promise<Patient[]> {
     return []
   }
 }
+
 
 /**
  * Get a single patient by ID

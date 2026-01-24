@@ -1,70 +1,35 @@
-import { Suspense } from 'react'
 import { AppointmentsClient } from '@/components/modules/appointments/AppointmentsClient'
 import { getAppointments, getAppointmentStats, getDoctors } from '@/actions/appointments'
 import { getPatients } from '@/actions/patients'
-
-export const dynamic = 'force-dynamic'
-
 import { currentUser } from '@clerk/nextjs/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { syncUser } from '@/actions/auth'
+import { redirect } from 'next/navigation'
 
-async function AppointmentsContent() {
+export default async function AppointmentsPage() {
   const user = await currentUser()
-  if (!user) return null
+  if (!user) redirect('/sign-in')
 
-  // Fetch user role
-  const { data: userData } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const dbUser = await syncUser()
+  if (!dbUser) redirect('/sign-in')
 
-  const userRole = userData?.role || 'PATIENT'
-
-  // Fetch data
-  const [appointmentsResult, statsResult, patientsData, doctorsResult] = await Promise.all([
+  /* 
+    Fetch data in parallel for performance.
+    Note: getPatients might return empty if user is Doctor and has no patients yet.
+  */
+  const [appointmentsRes, statsRes, doctorsRes, patientsRes] = await Promise.all([
     getAppointments(),
     getAppointmentStats(),
-    getPatients(),
     getDoctors(),
+    getPatients()
   ])
-
-  const appointments = appointmentsResult.data || []
-  const stats = statsResult.data || {
-    today: 0,
-    pending: 0,
-    completed: 0,
-    cancelled: 0,
-    inProgress: 0,
-    total: 0,
-  }
-
-  let patients = patientsData || []
-  const doctors = doctorsResult.data || []
-
-  // If user is a patient, only show themselves in the patients list
-  if (userRole === 'PATIENT') {
-    const userEmail = user.emailAddresses[0]?.emailAddress
-    if (userEmail) {
-      patients = patients.filter(p => p.email === userEmail)
-    }
-  }
 
   return (
     <AppointmentsClient
-      appointments={appointments}
-      stats={stats}
-      patients={patients}
-      doctors={doctors}
-      userRole={userRole}
+      appointments={appointmentsRes.success ? appointmentsRes.data || [] : []}
+      stats={statsRes.success ? statsRes.data! : { today: 0, pending: 0, completed: 0, cancelled: 0, inProgress: 0, total: 0 }}
+      patients={patientsRes || []}
+      doctors={doctorsRes.success ? doctorsRes.data || [] : []}
+      userRole={dbUser.role}
     />
-  )
-}
-
-export default async function AppointmentsPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><div className="animate-pulse text-muted-foreground">Loading appointments...</div></div>}>
-      <AppointmentsContent />
-    </Suspense>
   )
 }

@@ -27,11 +27,12 @@ export async function getDoctorStats() {
         .eq('status', 'SCHEDULED')
 
     // 2. Total Patients (Unique)
-    // Supabase distinct count via query is tricky, approximating or using RPC is better but fetch all works for small scale
+    // Optimization: Limiting to 1000 interactions to prevent timeouts. For accurate large-scale stats, consider an RPC function or a dedicated stats table.
     const { data: visits } = await supabaseAdmin
         .from('appointments')
         .select('patient_id')
         .eq('doctor_id', doctorId)
+        .limit(1000)
 
     const uniquePatients = new Set(visits?.map(v => v.patient_id)).size
 
@@ -77,6 +78,7 @@ export async function getDoctorAppointments() {
         .eq('doctor_id', doctorId)
         .gte('appointment_date', today.toISOString())
         .order('appointment_date', { ascending: true })
+        .limit(100) // Optimization: Limit to next 100 appointments
 
     return appointments || []
 }
