@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { logSymptom } from '@/actions/patient-portal'
 import { toast } from 'sonner'
-import { Activity } from 'lucide-react'
+import { Activity, Stethoscope } from 'lucide-react'
 
 export function SymptomLogger() {
     const [symptom, setSymptom] = useState('')
@@ -29,7 +29,7 @@ export function SymptomLogger() {
             })
 
             if (res.success) {
-                toast.success('Symptom logged')
+                toast.success('Symptom logged successfully')
                 setSymptom('')
                 setSeverity([5])
             } else {
@@ -42,42 +42,88 @@ export function SymptomLogger() {
         }
     }
 
+    // Get severity color based on level
+    const getSeverityColor = (level: number) => {
+        if (level <= 3) return 'text-emerald-500'
+        if (level <= 6) return 'text-amber-500'
+        return 'text-red-500'
+    }
+
+    const getSeverityLabel = (level: number) => {
+        if (level <= 3) return 'Mild'
+        if (level <= 6) return 'Moderate'
+        return 'Severe'
+    }
+
     return (
-        <Card className="bg-gradient-to-br from-red-50 to-white border-red-100 dark:from-red-950/20 dark:border-red-900">
-            <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400 text-lg">
-                    <Activity className="h-5 w-5" />
-                    Symptom Check
+        <Card className="border-border bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2.5 text-foreground">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                        <Stethoscope className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <span className="text-base font-semibold">Symptom Check</span>
+                        <p className="text-xs font-normal text-muted-foreground mt-0.5">Track how you&apos;re feeling</p>
+                    </div>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
                 <div className="space-y-2">
-                    <Label>How are you feeling?</Label>
+                    <Label className="text-sm font-medium text-foreground">How are you feeling?</Label>
                     <Input
-                        placeholder="e.g. Headache, Nausea"
+                        placeholder="e.g. Headache, Nausea, Fatigue..."
                         value={symptom}
                         onChange={(e) => setSymptom(e.target.value)}
-                        className="bg-background/50"
+                        className="bg-background border-input focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                 </div>
 
-                <div className="space-y-4">
-                    <div className="flex justify-between">
-                        <Label>Severity</Label>
-                        <span className="text-sm font-bold text-red-600">{severity[0]}/10</span>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium text-foreground">Severity Level</Label>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs font-medium ${getSeverityColor(severity[0])}`}>
+                                {getSeverityLabel(severity[0])}
+                            </span>
+                            <span className={`text-lg font-bold ${getSeverityColor(severity[0])}`}>
+                                {severity[0]}/10
+                            </span>
+                        </div>
                     </div>
-                    <Slider
-                        value={severity}
-                        onValueChange={setSeverity}
-                        max={10}
-                        min={1}
-                        step={1}
-                        className="py-2"
-                    />
+                    <div className="pt-1">
+                        <Slider
+                            value={severity}
+                            onValueChange={setSeverity}
+                            max={10}
+                            min={1}
+                            step={1}
+                            className="cursor-pointer"
+                        />
+                        <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
+                            <span>Mild</span>
+                            <span>Moderate</span>
+                            <span>Severe</span>
+                        </div>
+                    </div>
                 </div>
 
-                <Button className="w-full bg-red-600 hover:bg-red-700 text-white" onClick={handleLog} disabled={loading}>
-                    {loading ? 'Logging...' : 'Log Entry'}
+                <Button 
+                    className="w-full font-medium" 
+                    onClick={handleLog} 
+                    disabled={loading || !symptom.trim()}
+                >
+                    {loading ? (
+                        <>
+                            <Activity className="h-4 w-4 mr-2 animate-pulse" />
+                            Logging...
+                        </>
+                    ) : (
+                        <>
+                            <Activity className="h-4 w-4 mr-2" />
+                            Log Symptom
+                        </>
+                    )}
                 </Button>
             </CardContent>
         </Card>
