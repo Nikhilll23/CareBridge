@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
-import { getWardStatus, markBedClean, dischargePatientFromBed, allocateBed } from '@/actions/beds'
+import { getWardStatus, markBedClean, dischargePatientFromBed, allocateBed, getPatientsForAllocation } from '@/actions/beds'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,21 +16,37 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
-export function LiveBedBoard() {
+interface LiveBedBoardProps {
+    userRole: string
+}
+
+export function LiveBedBoard({ userRole }: LiveBedBoardProps) {
     const [wards, setWards] = useState<any[]>([])
     const [isAllocateOpen, setIsAllocateOpen] = useState(false)
     const [selectedBedId, setSelectedBedId] = useState<string | null>(null)
-    const [patientIdInput, setPatientIdInput] = useState('')
+    const [selectedPatientId, setSelectedPatientId] = useState('')
+    const [patients, setPatients] = useState<any[]>([])
+
+    const isAdmin = userRole === 'ADMIN'
 
     const supabase = createSupabaseBrowserClient()
 
     const fetchStatus = () => getWardStatus().then(setWards)
+    const fetchPatients = () => getPatientsForAllocation().then(setPatients)
 
     useEffect(() => {
         fetchStatus()
+        fetchPatients()
 
         // Realtime Subscription
         const channel = supabase
@@ -61,18 +77,18 @@ export function LiveBedBoard() {
 
     const openAllocateDialog = (bedId: string) => {
         setSelectedBedId(bedId)
-        setPatientIdInput('')
+        setSelectedPatientId('')
         setIsAllocateOpen(true)
     }
 
     const confirmAllocate = async () => {
-        if (!selectedBedId || !patientIdInput) return
+        if (!selectedBedId || !selectedPatientId) return
 
         setIsAllocateOpen(false) // Close immediately to feel responsive
-        toast.promise(allocateBed(patientIdInput, selectedBedId), {
+        toast.promise(allocateBed(selectedPatientId, selectedBedId), {
             loading: 'Allocating Bed...',
             success: 'Bed Allocated Successfully',
-            error: 'Failed to Allocate'
+            error: (err: any) => err?.error || 'Failed to Allocate'
         })
     }
 
@@ -107,6 +123,7 @@ export function LiveBedBoard() {
                                 <BedCard
                                     key={bed.id}
                                     bed={bed}
+                                    isAdmin={isAdmin}
                                     onDischarge={() => handleDischarge(bed.id)}
                                     onClean={() => handleClean(bed.id)}
                                     onAllocate={() => openAllocateDialog(bed.id)}
@@ -125,26 +142,36 @@ export function LiveBedBoard() {
                     <DialogHeader>
                         <DialogTitle>Allocate Bed</DialogTitle>
                         <DialogDescription>
-                            Enter the Patient's Unique Health ID (UHID) to assign this bed.
+                            Select a patient to assign this bed.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="uhid" className="text-right">
-                                Patient UHID
-                            </Label>
-                            <Input
-                                id="uhid"
-                                value={patientIdInput}
-                                onChange={(e) => setPatientIdInput(e.target.value)}
-                                className="col-span-3"
-                                placeholder="e.g. PAT-12345"
-                            />
+                        <div className="grid gap-2">
+                            <Label>Select Patient</Label>
+                            <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a patient..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {patients.map((patient) => (
+                                        <SelectItem key={patient.id} value={patient.id}>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">
+                                                    {patient.first_name} {patient.last_name}
+                                                </span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {patient.uhid || 'No UHID'} • {patient.contact_number}
+                                                </span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAllocateOpen(false)}>Cancel</Button>
-                        <Button onClick={confirmAllocate}>Allocate Bed</Button>
+                        <Button onClick={confirmAllocate} disabled={!selectedPatientId}>Allocate Bed</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -152,7 +179,7 @@ export function LiveBedBoard() {
     )
 }
 
-function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
+function BedCard({ bed, isAdmin, onDischarge, onClean, onAllocate }: any) {
     const statusColor =
         bed.status === 'AVAILABLE' ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/30' :
             bed.status === 'OCCUPIED' ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/30' :
@@ -182,7 +209,7 @@ function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
             </div>
 
             <div className="mt-3 w-full">
-                {bed.status === 'OCCUPIED' && (
+                {isAdmin && bed.status === 'OCCUPIED' && (
                     <Button
                         size="sm"
                         variant="destructive"
@@ -192,7 +219,7 @@ function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
                         <UserMinus className="h-3 w-3 mr-1" /> Discharge
                     </Button>
                 )}
-                {bed.status === 'CLEANING' && (
+                {isAdmin && bed.status === 'CLEANING' && (
                     <Button
                         size="sm"
                         className="w-full h-7 text-[10px] bg-yellow-500 hover:bg-yellow-600 text-black"
@@ -201,7 +228,7 @@ function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
                         <Sparkles className="h-3 w-3 mr-1" /> Ready
                     </Button>
                 )}
-                {bed.status === 'AVAILABLE' && (
+                {isAdmin && bed.status === 'AVAILABLE' && (
                     <Button
                         size="sm"
                         className="w-full h-7 text-[10px] bg-green-600 hover:bg-green-700"
@@ -209,6 +236,11 @@ function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
                     >
                         <UserPlus className="h-3 w-3 mr-1" /> Allocate
                     </Button>
+                )}
+                {!isAdmin && (
+                    <div className="text-[10px] text-center text-muted-foreground">
+                        {bed.status}
+                    </div>
                 )}
             </div>
         </div>

@@ -11,6 +11,8 @@ export interface SurgeryData {
     startTime: string // ISO
     endTime: string // ISO
     surgeonName: string
+    anaesthetistName: string
+    nurseName: string
 }
 
 // --- Scheduling ---
@@ -33,7 +35,11 @@ export async function scheduleSurgery(data: SurgeryData) {
         procedure_name: data.procedureName,
         scheduled_start: data.startTime,
         scheduled_end: data.endTime,
-        team_mapping: { surgeon: data.surgeonName }, // Simplified for initial booking
+        team_mapping: {
+            surgeon: data.surgeonName,
+            anaesthetist: data.anaesthetistName,
+            nurse: data.nurseName
+        },
         status: 'SCHEDULED'
     })
 
@@ -43,8 +49,22 @@ export async function scheduleSurgery(data: SurgeryData) {
     return { success: true }
 }
 
+
+import { currentUser } from '@clerk/nextjs/server'
+
 export async function getSurgeries() {
-    const { data } = await supabaseAdmin
+    const user = await currentUser()
+    if (!user) return []
+
+    // 1. Get User Role & Details
+    const { data: dbUser } = await supabaseAdmin
+        .from('users')
+        .select('role, first_name, last_name')
+        .eq('id', user.id)
+        .single()
+
+    // 2. Base Query
+    let query = supabaseAdmin
         .from('surgeries')
         .select(`
             *,
@@ -53,12 +73,68 @@ export async function getSurgeries() {
         `)
         .order('scheduled_start', { ascending: true })
 
+    // 3. Apply Filters
+    if (dbUser?.role === 'PATIENT') {
+        const userEmail = user.emailAddresses[0]?.emailAddress
+        const { data: patient } = await supabaseAdmin.from('patients').select('id').eq('email', userEmail).single()
+        if (patient) {
+            query = query.eq('patient_id', patient.id)
+        } else {
+            return [] // Patient record not found
+        }
+    } else if (dbUser?.role === 'DOCTOR') {
+        // Filter by name in team_mapping (JSONB)
+        // team_mapping is { surgeon: "Name", anaesthetist: "Name" }
+        const docName = `${dbUser.first_name} ${dbUser.last_name}`
+
+        // Postgres JSONB containment or text search
+        // We want OR logic: surgeon == name OR anaesthetist == name
+        // This is tricky with simple Supabase filters.
+        // We can use .or() with checking the raw JSON column
+        // syntax: team_mapping->>surgeon.eq.Name
+        query = query.or(`team_mapping->>surgeon.eq."${docName}",team_mapping->>anaesthetist.eq."${docName}"`)
+    }
+    // ADMIN and NURSE see all (no filter needed)
+
+    const { data } = await query
     return data || []
 }
 
 export async function getTheaters() {
     const { data } = await supabaseAdmin.from('theaters').select('*')
     return data || []
+}
+
+export async function getOTSchedulingResources() {
+    const user = await currentUser()
+    let userRole = 'PATIENT' // Default safer
+
+    if (user) {
+        const { data: u } = await supabaseAdmin.from('users').select('role').eq('id', user.id).single()
+        if (u) userRole = u.role
+    }
+
+    // Fetch Doctors (surgeons/anaesthetists)
+    const { data: doctors } = await supabaseAdmin
+        .from('users')
+        .select('id, first_name, last_name, role')
+        .eq('role', 'DOCTOR')
+
+    // Fetch Patients (for dropdown)
+    const { data: patients } = await supabaseAdmin
+        .from('patients')
+        .select('id, first_name, last_name, uhid')
+        .order('created_at', { ascending: false })
+        .limit(50) // Limit to recent 50 for performance, searchable better via detailed query if needed
+
+    return {
+        doctors: doctors?.map(d => ({
+            id: d.id,
+            name: `${d.first_name} ${d.last_name}`
+        })) || [],
+        patients: patients || [],
+        userRole
+    }
 }
 
 // --- WHO Safety Checklist ---

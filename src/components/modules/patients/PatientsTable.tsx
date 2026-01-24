@@ -24,9 +24,10 @@ import { Button } from '@/components/ui/button'
 
 interface PatientsTableProps {
   patients: Patient[]
+  userRole?: string
 }
 
-export function PatientsTable({ patients }: PatientsTableProps) {
+export function PatientsTable({ patients, userRole }: PatientsTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
 
   // Calculate age from date of birth
@@ -57,7 +58,7 @@ export function PatientsTable({ patients }: PatientsTableProps) {
       // Better: Randomize or cycle? No, just default.
       const res = await registerEmergencyPatient('Male', 30)
       if (res.success) {
-        toast.success(`Created: ${res.message}`, { id: toastId })
+        toast.success(`Created: ${res.data.uhid}`, { id: toastId })
       } else {
         toast.error(res.error, { id: toastId })
       }
@@ -97,10 +98,12 @@ export function PatientsTable({ patients }: PatientsTableProps) {
             className="pl-10"
           />
         </div>
-        <Button variant="destructive" onClick={handleEmergencyReg} className="shadow-red-200 shadow-lg">
-          <Ambulance className="mr-2 h-4 w-4" />
-          Rapid Emergency Reg
-        </Button>
+        {userRole !== 'DOCTOR' && (
+          <Button variant="destructive" onClick={handleEmergencyReg} className="shadow-red-200 shadow-lg">
+            <Ambulance className="mr-2 h-4 w-4" />
+            Rapid Emergency Reg
+          </Button>
+        )}
       </div>
 
       {/* Table */}

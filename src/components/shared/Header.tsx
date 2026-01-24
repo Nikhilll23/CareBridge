@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { UserButton } from '@clerk/nextjs'
-import { Menu, Bell } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { NotificationPanel } from '@/components/shared/NotificationPanel'
 import type { UserRole } from '@/types'
 import { cn } from '@/lib/utils'
 import { navigationItems } from './AppSidebar'
+
 
 interface HeaderProps {
   userRole: UserRole
@@ -109,11 +111,7 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
           <ThemeToggle />
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+          <NotificationPanel />
 
           {/* User Profile */}
           <div className="flex items-center gap-3" suppressHydrationWarning>

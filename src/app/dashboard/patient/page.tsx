@@ -1,9 +1,11 @@
 import { getPatientPortalData } from '@/actions/patient-portal'
 import { QuickBook } from '@/components/modules/patient/QuickBook'
 import { SymptomLogger } from '@/components/modules/patient/SymptomLogger'
+import { PatientPaymentSection } from '@/components/modules/patient/PatientPaymentSection'
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { format } from 'date-fns'
 import { Calendar, FileText, Activity } from 'lucide-react'
@@ -32,8 +34,15 @@ export default async function PatientDashboard() {
         )
     }
 
-    const { patient, upcoming, past, totalDue, availableDoctors } = data
-    const nextVisit = upcoming[0]
+    const { patient, todaysAppointments, futureAppointments, past, totalDue, availableDoctors, invoices } = data
+    const nextFutureVisit = futureAppointments[0]
+
+    console.log('--- Patient Dashboard Debug ---')
+    console.log('Patient ID:', patient.id)
+    console.log('Total Due:', totalDue)
+    console.log('Invoices Count:', invoices?.length)
+    console.log('Todays Appointments:', todaysAppointments?.length)
+    console.log('-------------------------------')
 
     return (
         <div className="space-y-6">
@@ -43,34 +52,46 @@ export default async function PatientDashboard() {
                     <p className="text-muted-foreground">Welcome back, {patient.first_name} {patient.last_name}</p>
                 </div>
 
-                {totalDue > 0 && (
-                    <Link href="/dashboard/patient/billing">
-                        <Button variant="destructive" className="animate-pulse">
-                            Pay Outstanding: ${(totalDue / 100).toFixed(2)}
-                        </Button>
-                    </Link>
-                )}
+                <PatientPaymentSection patientId={patient.id} totalDue={totalDue} />
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
-                {/* Next Visit Card */}
+                {/* Today's Appointments Card */}
                 <Card className="md:col-span-2 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background border-blue-100 dark:border-blue-900">
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                             <Calendar className="h-5 w-5" />
-                            Next Appointment
+                            Today's Appointments {todaysAppointments.length > 0 && `(${todaysAppointments.length})`}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {nextVisit ? (
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <div>
-                                    <p className="text-2xl font-bold">{format(new Date(nextVisit.appointment_date), 'EEEE, MMMM do')}</p>
-                                    <p className="text-lg text-muted-foreground">{format(new Date(nextVisit.appointment_date), 'h:mm a')}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-semibold">{nextVisit.doctor?.first_name ? `Dr. ${nextVisit.doctor.first_name} ${nextVisit.doctor.last_name}` : 'Doctor Assigned'}</p>
-                                    <p className="text-sm text-muted-foreground">{nextVisit.type || 'General Checkup'}</p>
+                        {todaysAppointments.length > 0 ? (
+                            <div className="space-y-3">
+                                {todaysAppointments.map((appt: any) => (
+                                    <div key={appt.id} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                                        <div>
+                                            <p className="text-lg font-bold">{format(new Date(appt.appointment_date), 'h:mm a')}</p>
+                                            <p className="text-sm text-muted-foreground">{appt.reason || 'General Checkup'}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-semibold">{appt.doctor?.first_name ? `Dr. ${appt.doctor.first_name} ${appt.doctor.last_name}` : 'Doctor Assigned'}</p>
+                                            <Badge className="mt-1">{appt.status}</Badge>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : nextFutureVisit ? (
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-2">No appointments today. Next appointment:</p>
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div>
+                                        <p className="text-2xl font-bold">{format(new Date(nextFutureVisit.appointment_date), 'EEEE, MMMM do')}</p>
+                                        <p className="text-lg text-muted-foreground">{format(new Date(nextFutureVisit.appointment_date), 'h:mm a')}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-semibold">{nextFutureVisit.doctor?.first_name ? `Dr. ${nextFutureVisit.doctor.first_name} ${nextFutureVisit.doctor.last_name}` : 'Doctor Assigned'}</p>
+                                        <p className="text-sm text-muted-foreground">{nextFutureVisit.type || 'General Checkup'}</p>
+                                    </div>
                                 </div>
                             </div>
                         ) : (

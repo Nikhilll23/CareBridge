@@ -3,6 +3,35 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
+export interface InventoryItem {
+  id: string
+  item_name: string // mapped from drug_name
+  drug_name: string
+  category: string
+  stock_quantity: number // mapped from quantity
+  quantity: number
+  unit_price: number // mapped
+  price_per_unit: number
+  expiry_date: string | null
+  batch_number: string | null
+  low_stock_threshold: number
+  strength?: string
+  dosage_form?: string
+  ndc_code?: string
+}
+
+export async function getInventory() {
+  const { data } = await supabaseAdmin.from('pharmacy_inventory').select('*').order('drug_name')
+  // Map fields for consistency
+  return (data || []).map(d => ({
+    ...d,
+    item_name: d.drug_name,
+    stock_quantity: d.quantity,
+    unit_price: d.price_per_unit,
+    low_stock_threshold: 20 // Default
+  }))
+}
+
 // --- Vendor Management ---
 export async function getVendors() {
   const { data } = await supabaseAdmin.from('vendors').select('*')
@@ -138,4 +167,103 @@ export async function returnStock(batchId: string, qty: number, reason: string) 
 
   revalidatePath('/dashboard/admin/inventory')
   return { success: true }
+}
+export async function deleteInventoryItem(id: string) {
+  try {
+    const { error } = await supabaseAdmin.from('pharmacy_inventory').delete().eq('id', id)
+    if (error) throw error
+    revalidatePath('/dashboard/admin/inventory')
+    revalidatePath('/dashboard/pharmacy')
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Failed' }
+  }
+}
+
+export async function addInventoryItem(data: any) {
+  try {
+    const { error } = await supabaseAdmin.from('pharmacy_inventory').insert({
+      drug_name: data.drug_name,
+      category: data.category,
+      stock_quantity: data.stock_quantity,
+      unit_price: data.unit_price,
+      batch_number: data.batch_number,
+      expiry_date: data.expiry_date,
+      quantity: data.stock_quantity, // Map stock to quantity for consistency
+      price_per_unit: data.unit_price
+    })
+    if (error) throw error
+    revalidatePath('/dashboard/admin/inventory')
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Failed to add item' }
+  }
+}
+
+export async function updateInventoryItem(id: string, data: any) {
+  try {
+    const { error } = await supabaseAdmin.from('pharmacy_inventory').update(data).eq('id', id)
+    if (error) throw error
+    revalidatePath('/dashboard/admin/inventory')
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Failed to update' }
+  }
+}
+
+export async function dispenseMedication(data: { inventoryId: string, patientId: string, quantity: number, notes?: string }) {
+  const { inventoryId, patientId, quantity, notes } = data
+
+  // 1. Get Stock
+  const { data: item } = await supabaseAdmin
+    .from('pharmacy_inventory')
+    .select('*')
+    .eq('id', inventoryId)
+    .single()
+
+  if (!item || item.quantity < quantity) {
+    return { success: false, error: 'Insufficient Stock' }
+  }
+
+  // 2. Deduct
+  const { error: stockError } = await supabaseAdmin
+    .from('pharmacy_inventory')
+    .update({ quantity: item.quantity - quantity })
+    .eq('id', inventoryId)
+
+  if (stockError) return { success: false, error: 'Stock update failed' }
+
+  // 3. Audit
+  const { error: auditError } = await supabaseAdmin.from('inventory_audit').insert({
+    drug_id: inventoryId,
+    action: 'DISPENSED',
+    quantity_change: -quantity,
+    performed_by: 'Admin/Nurse',
+    notes: notes
+  })
+
+  if (auditError) console.error('Audit Log Failed', auditError)
+
+  // 4. Create Sale
+  const total = item.price_per_unit * quantity
+  await supabaseAdmin.from('pharmacy_sales').insert({
+    patient_id: patientId,
+    total_amount: total,
+    payment_status: 'PENDING'
+  })
+
+  revalidatePath('/dashboard/admin/inventory')
+  revalidatePath('/dashboard/pharmacy')
+  return { success: true, message: 'Dispensed successfully' }
+}
+
+import { searchDrugLabel } from '@/lib/openfda'
+
+export async function getDrugInfoFromFDA(query: string) {
+  try {
+    const result = await searchDrugLabel(query)
+    return { success: true, data: result?.results || [] }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch from FDA' }
+  }
 }

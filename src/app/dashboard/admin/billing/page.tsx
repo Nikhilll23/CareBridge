@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { generateFinalBill, searchTariff, addMiscCharge, applyDiscount, finalizeBill } from '@/actions/billing'
 import { searchPatients } from '@/actions/patients'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { PaymentButton } from '@/components/modules/billing/PaymentButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,6 +64,7 @@ export default function BillingDashboard() {
     }
 
     const handleAddCharge = async (item: any) => {
+        if (!billData?.invoice?.id) return
         await addMiscCharge(billData.invoice.id, item)
         toast.success('Charge Added')
         setTariffSearch('')
@@ -71,6 +73,7 @@ export default function BillingDashboard() {
     }
 
     const handleApplyDiscount = async () => {
+        if (!billData?.invoice?.id) return
         const res = await applyDiscount(billData.invoice.id, parseFloat(discountAmt), discountReason, adminRoleMock)
         if (res.success) {
             toast.success('Discount Approved & Applied')
@@ -82,6 +85,7 @@ export default function BillingDashboard() {
     }
 
     const handleFinalize = async () => {
+        if (!billData) return
         await finalizeBill(billData.invoice.id)
         toast.success('Bill Finalized')
         loadBill(patient)
@@ -160,7 +164,7 @@ export default function BillingDashboard() {
 
                 {/* RIGHT: The Bill (A4) */}
                 <div className="md:col-span-8">
-                    {billData ? (
+                    {billData && billData.invoice ? (
                         <Card className="min-h-[800px] shadow-lg print:shadow-none print:border-none">
                             <CardContent className="p-8 space-y-8">
                                 {/* Header */}
@@ -172,9 +176,9 @@ export default function BillingDashboard() {
                                     </div>
                                     <div className="text-right">
                                         <h3 className="text-xl font-bold uppercase text-primary">Invoice</h3>
-                                        <p className="text-sm">#INV-{billData.invoice.id.slice(0, 8)}</p>
-                                        <Badge variant={billData.invoice.status === 'FINALIZED' ? 'default' : 'secondary'}>
-                                            {billData.invoice.status}
+                                        <p className="text-sm">#INV-{billData?.invoice?.id?.slice(0, 8)}</p>
+                                        <Badge variant={billData?.invoice?.status === 'FINALIZED' ? 'default' : 'secondary'}>
+                                            {billData?.invoice?.status}
                                         </Badge>
                                     </div>
                                 </div>
@@ -253,7 +257,15 @@ export default function BillingDashboard() {
                                         </>
                                     )}
                                     {billData.invoice.status === 'FINALIZED' && (
-                                        <Button onClick={() => window.print()} variant="secondary"><Printer className="h-4 w-4 mr-2" /> Reprint</Button>
+                                        <div className="flex gap-2">
+                                            <PaymentButton
+                                                patientId={patient.id}
+                                                amount={billData.totals.grandTotal}
+                                                description={`Invoice #${billData.invoice.id.slice(0, 8)}`}
+                                                onSuccess={() => loadBill(patient)}
+                                            />
+                                            <Button onClick={() => window.print()} variant="secondary"><Printer className="h-4 w-4 mr-2" /> Reprint</Button>
+                                        </div>
                                     )}
                                 </div>
                             </CardContent>

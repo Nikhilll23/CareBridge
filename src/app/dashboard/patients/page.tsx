@@ -1,9 +1,18 @@
 import { getPatients } from '@/actions/patients'
 import { PatientsTable, AddPatientDialog } from '@/components/modules/patients'
 import { UserPlus, Users } from 'lucide-react'
+import { currentUser } from '@clerk/nextjs/server'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export default async function PatientsPage() {
   const patients = await getPatients()
+  const user = await currentUser()
+  let userRole = 'PATIENT'
+
+  if (user) {
+    const { data } = await supabaseAdmin.from('users').select('role').eq('id', user.id).single()
+    if (data) userRole = data.role
+  }
 
   return (
     <div className="space-y-6">
@@ -18,14 +27,16 @@ export default async function PatientsPage() {
             Manage patient records and demographics
           </p>
         </div>
-        
-        {/* Add New Patient Button */}
-        <AddPatientDialog>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
-            <UserPlus className="h-4 w-4" />
-            Add New Patient
-          </button>
-        </AddPatientDialog>
+
+        {/* Add New Patient Button - Admin/Receptionist only */}
+        {(userRole === 'ADMIN' || userRole === 'RECEPTIONIST' || userRole === 'NURSE') && (
+          <AddPatientDialog>
+            <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+              <UserPlus className="h-4 w-4" />
+              Add New Patient
+            </button>
+          </AddPatientDialog>
+        )}
       </div>
 
       {/* Patient Statistics */}
@@ -53,8 +64,9 @@ export default async function PatientsPage() {
 
       {/* Patients Data Table */}
       <div className="rounded-lg border border-border bg-card">
-        <PatientsTable patients={patients} />
+        <PatientsTable patients={patients} userRole={userRole} />
       </div>
     </div>
   )
 }
+

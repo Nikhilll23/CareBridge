@@ -28,8 +28,8 @@ export async function logAuditAction(
 
 // --- Retrieval ---
 
-export async function getAuditLogs(filterUserId?: string, filterRecordId?: string) {
-    let query = supabaseAdmin.from('audit_logs').select('*').order('timestamp', { ascending: false }).limit(50)
+export async function getAuditLogs(limit: number = 50, filterUserId?: string, filterRecordId?: string) {
+    let query = supabaseAdmin.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(limit)
 
     if (filterUserId) query = query.eq('performed_by', filterUserId)
     if (filterRecordId) query = query.eq('record_id', filterRecordId)

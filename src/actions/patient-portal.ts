@@ -52,30 +52,57 @@ export async function getPatientPortalData() {
 
     if (!patient) return null // Truly failed to link
 
-    // 2. Upcoming Appointments
-    const today = new Date().toISOString()
-    const { data: upcoming } = await supabaseAdmin
+    // 2. Today's and Upcoming Appointments
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+
+    // Get today's appointments
+    const { data: todayData } = await supabaseAdmin
         .from('appointments')
-        .select(`
-        *,
-        doctor:users!appointments_doctor_id_fkey (
-            first_name,
-            last_name
-        )
-    `)
+        .select('*')
         .eq('patient_id', patient.id)
-        .gte('appointment_date', today)
+        .gte('appointment_date', todayStart)
+        .lt('appointment_date', todayEnd)
+        .order('appointment_date', { ascending: true })
+
+    // Get future appointments (after today)
+    const { data: futureData } = await supabaseAdmin
+        .from('appointments')
+        .select('*')
+        .eq('patient_id', patient.id)
+        .gte('appointment_date', todayEnd)
         .order('appointment_date', { ascending: true })
         .limit(5)
 
     // 3. Past History
-    const { data: past } = await supabaseAdmin
+    const { data: pastData } = await supabaseAdmin
         .from('appointments')
         .select('*')
         .eq('patient_id', patient.id)
-        .lt('appointment_date', today)
+        .lt('appointment_date', todayStart)
         .order('appointment_date', { ascending: false })
         .limit(5)
+
+    // Fetch doctors for appointments
+    const doctorIds = new Set<string>()
+    todayData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
+    futureData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
+    pastData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
+
+    const { data: doctorsMap } = await supabaseAdmin
+        .from('users')
+        .select('id, first_name, last_name')
+        .in('id', Array.from(doctorIds))
+
+    const enhanceAppointment = (appt: any) => {
+        const doc = doctorsMap?.find(d => d.id === appt.doctor_id)
+        return { ...appt, doctor: doc }
+    }
+
+    const todaysAppointments = todayData?.map(enhanceAppointment) || []
+    const futureAppointments = futureData?.map(enhanceAppointment) || []
+    const past = pastData?.map(enhanceAppointment) || []
 
     // 4. Invoices (Wallet)
     const { data: invoices } = await supabaseAdmin
@@ -94,8 +121,9 @@ export async function getPatientPortalData() {
 
     return {
         patient,
-        upcoming: upcoming || [],
-        past: past || [],
+        todaysAppointments,
+        futureAppointments,
+        past,
         totalDue,
         invoices: invoices || [],
         availableDoctors: doctors || []
@@ -124,17 +152,18 @@ export async function bookAppointment(data: any) {
                 doctor_id: data.doctorId, // Optional or assigned
                 appointment_date: data.date, // ISO string
                 reason: data.reason,
-                status: 'PENDING', // Waiting approval
-                type: 'General' // Default
+                status: 'SCHEDULED', // Waiting approval
             })
 
         if (error) throw error
 
         revalidatePath('/dashboard/patient')
+        revalidatePath('/dashboard/appointments') // Admin view
+        revalidatePath('/dashboard/doctor') // Doctor view
         return { success: true }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Booking Error:', error)
-        return { success: false, error: 'Failed to book appointment' }
+        return { success: false, error: error.message || 'Failed to book appointment' }
     }
 }
 

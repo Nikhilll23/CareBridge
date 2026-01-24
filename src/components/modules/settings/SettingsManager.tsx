@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { Settings as SettingsIcon, User, Bell, Shield, Database, Save, Check, Loader2, Download } from 'lucide-react'
-import { updateUserProfile, updateNotificationSettings } from '@/actions/settings'
+import { updateUserProfile } from '@/actions/settings'
+import { getNotificationSettings, updateNotificationSettings } from '@/actions/notifications'
 import { toast } from 'sonner'
 
 interface SettingsManagerProps {
@@ -23,12 +24,37 @@ interface SettingsManagerProps {
 export function SettingsManager({ user }: SettingsManagerProps) {
     const [loadingProfile, setLoadingProfile] = useState(false)
     const [loadingNotify, setLoadingNotify] = useState(false)
+    const [loadingSettings, setLoadingSettings] = useState(true)
 
     const [profile, setProfile] = useState({
         first_name: user?.firstName || '',
         last_name: user?.lastName || '',
         phone: user?.phone || ''
     })
+
+    const [notificationPrefs, setNotificationPrefs] = useState({
+        email_notifications: true,
+        appointment_reminders: true,
+        patient_updates: true,
+        system_alerts: true
+    })
+
+    // Load notification settings on mount
+    useEffect(() => {
+        async function loadSettings() {
+            const result = await getNotificationSettings()
+            if (result.data) {
+                setNotificationPrefs({
+                    email_notifications: result.data.email_notifications,
+                    appointment_reminders: result.data.appointment_reminders,
+                    patient_updates: result.data.patient_updates,
+                    system_alerts: result.data.system_alerts
+                })
+            }
+            setLoadingSettings(false)
+        }
+        loadSettings()
+    }, [])
 
     const handleProfileSave = async () => {
         setLoadingProfile(true)
@@ -50,9 +76,20 @@ export function SettingsManager({ user }: SettingsManagerProps) {
 
     const handleNotifySave = async () => {
         setLoadingNotify(true)
-        await updateNotificationSettings(user.id, {})
-        toast.success('Preferences saved')
+        const result = await updateNotificationSettings(notificationPrefs)
+        if (result.success) {
+            toast.success('Notification preferences saved')
+        } else {
+            toast.error('Failed to save preferences')
+        }
         setLoadingNotify(false)
+    }
+
+    const handleToggle = (key: keyof typeof notificationPrefs) => {
+        setNotificationPrefs(prev => ({
+            ...prev,
+            [key]: !prev[key]
+        }))
     }
 
     const handleExport = () => {
@@ -153,23 +190,66 @@ export function SettingsManager({ user }: SettingsManagerProps) {
                     <CardDescription>Configure how you receive notifications</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {['Email Notifications', 'Appointment Reminders', 'Patient Updates', 'System Alerts'].map((item) => (
-                        <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="space-y-0.5">
-                                <Label>{item}</Label>
-                                <p className="text-sm text-muted-foreground">Receive updates for {item.toLowerCase()}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-green-500" />
-                                <span className="text-sm text-muted-foreground">Enabled</span>
-                            </div>
+                    {loadingSettings ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
-                    ))}
+                    ) : (
+                        <>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="email_notifications">Email Notifications</Label>
+                                    <p className="text-sm text-muted-foreground">Receive important updates via email</p>
+                                </div>
+                                <Switch
+                                    id="email_notifications"
+                                    checked={notificationPrefs.email_notifications}
+                                    onCheckedChange={() => handleToggle('email_notifications')}
+                                />
+                            </div>
 
-                    <Button onClick={handleNotifySave} disabled={loadingNotify} className="w-full md:w-auto">
-                        {loadingNotify ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                        Save Notification Settings
-                    </Button>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="appointment_reminders">Appointment Reminders</Label>
+                                    <p className="text-sm text-muted-foreground">Get notified about upcoming appointments</p>
+                                </div>
+                                <Switch
+                                    id="appointment_reminders"
+                                    checked={notificationPrefs.appointment_reminders}
+                                    onCheckedChange={() => handleToggle('appointment_reminders')}
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="patient_updates">Patient Updates</Label>
+                                    <p className="text-sm text-muted-foreground">Receive notifications about patient status changes</p>
+                                </div>
+                                <Switch
+                                    id="patient_updates"
+                                    checked={notificationPrefs.patient_updates}
+                                    onCheckedChange={() => handleToggle('patient_updates')}
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="system_alerts">System Alerts</Label>
+                                    <p className="text-sm text-muted-foreground">Important system notifications and updates</p>
+                                </div>
+                                <Switch
+                                    id="system_alerts"
+                                    checked={notificationPrefs.system_alerts}
+                                    onCheckedChange={() => handleToggle('system_alerts')}
+                                />
+                            </div>
+
+                            <Button onClick={handleNotifySave} disabled={loadingNotify} className="w-full md:w-auto">
+                                {loadingNotify ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                                Save Notification Settings
+                            </Button>
+                        </>
+                    )}
                 </CardContent>
             </Card>
 

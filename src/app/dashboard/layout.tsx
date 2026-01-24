@@ -31,7 +31,11 @@ export default async function DashboardLayout({
   return (
     <div className="relative flex min-h-screen">
       {/* Sidebar - Fixed on desktop */}
-      <AppSidebar className="hidden md:flex" userRole={userProfile.role} />
+      <AppSidebar
+        className="hidden md:flex"
+        userRole={userProfile.role}
+        userEmail={clerkUser.primaryEmailAddress?.emailAddress || ''}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1">

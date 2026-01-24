@@ -2,10 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
+}
+
+// Warn if service key is missing
+if (!supabaseServiceKey) {
+  console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY is missing. Admin operations may fail due to RLS policies.')
 }
 
 // Client for browser/client-side operations

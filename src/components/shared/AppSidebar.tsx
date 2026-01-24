@@ -22,12 +22,21 @@ import {
   FileText,
   BarChart3,
   Bed,
+  FlaskConical,
+  Scissors,
+  Package,
+  AlertTriangle,
+  Receipt,
+  Wrench
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { NavItem } from '@/types'
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { getPatientBedAllocation } from '@/actions/beds'
 
 
 export const navigationItems: NavItem[] = [
@@ -54,14 +63,29 @@ export const navigationItems: NavItem[] = [
     icon: Bed,
   },
   {
+    title: 'Diagnostic Lab',
+    href: '/dashboard/lab',
+    icon: FlaskConical,
+  },
+  {
     title: 'Radiology',
     href: '/dashboard/radiology',
     icon: ActivitySquare,
   },
   {
+    title: 'Operation Theatre',
+    href: '/dashboard/ot',
+    icon: Scissors,
+  },
+  {
     title: 'Pharmacy',
     href: '/dashboard/pharmacy',
     icon: Pill,
+  },
+  {
+    title: 'Reports',
+    href: '/dashboard/doctor/reports',
+    icon: FileText,
   },
   {
     title: 'Emergency',
@@ -73,7 +97,7 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/ai',
     icon: Brain,
   },
-
+  // Operations Section
   {
     title: 'Staff Directory',
     href: '/dashboard/admin/staff',
@@ -84,7 +108,33 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/admin/roster',
     icon: CalendarClock,
   },
+  {
+    title: 'Inventory & Store',
+    href: '/dashboard/admin/inventory',
+    icon: Package,
+  },
+  {
+    title: 'Resources',
+    href: '/dashboard/admin/resources',
+    icon: Wrench,
+  },
+  {
+    title: 'Risk & Safety',
+    href: '/dashboard/admin/risk',
+    icon: AlertTriangle,
+  },
   // Finance Section
+  {
+    title: 'Billing',
+    href: '/dashboard/admin/billing',
+    icon: Receipt,
+  },
+  {
+    title: 'Billing & Payments',
+    href: '/dashboard/patient/billing',
+    icon: Receipt,
+  },
+
   {
     title: 'Revenue & Claims',
     href: '/dashboard/admin/finance',
@@ -131,7 +181,10 @@ const shouldShowItem = (item: NavItem, role?: string) => {
     '/dashboard/admin/insurance',
     '/dashboard/admin/map',
     '/dashboard/admin/audit',
-    '/dashboard/inventory', // Admin full access
+    '/dashboard/admin/inventory',
+    '/dashboard/admin/risk',
+    '/dashboard/admin/billing',
+    '/dashboard/admin/resources',
     '/admin', // Analytics
   ]
 
@@ -141,39 +194,85 @@ const shouldShowItem = (item: NavItem, role?: string) => {
 
   // Doctor items
   if (userRole === 'DOCTOR') {
-    return ['/dashboard/appointments', '/dashboard/patients', '/dashboard/radiology', '/dashboard/ai', '/dashboard/pharmacy', '/dashboard/beds'].includes(item.href)
+    return [
+      '/dashboard/appointments',
+      '/dashboard/patients',
+      '/dashboard/radiology',
+      '/dashboard/ai',
+      '/dashboard/pharmacy',
+      '/dashboard/lab',
+      '/dashboard/ot',
+      '/dashboard/doctor/reports'
+    ].includes(item.href)
   }
 
   // Patient items
   if (userRole === 'PATIENT') {
     // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/pharmacy', '/dashboard/ai', '/dashboard/patient/emergency'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds', '/dashboard/ot', '/dashboard/patient/reports'].includes(item.href)
   }
 
   // Nurse items
   if (userRole === 'NURSE') {
-    return ['/dashboard/patients', '/dashboard/appointments', '/dashboard/pharmacy', '/dashboard/ai', '/dashboard/beds'].includes(item.href)
+    return [
+      '/dashboard/patients',
+      '/dashboard/appointments',
+      '/dashboard/pharmacy',
+      '/dashboard/ai',
+      '/dashboard/beds',
+      '/dashboard/lab'
+    ].includes(item.href)
   }
 
-  // Default fallback for Admin (sees everything unless explicitly excluded)
-  if (userRole === 'ADMIN') return true
+  // Receptionist items
+  if (userRole === 'RECEPTIONIST') {
+    return [
+      '/dashboard/receptionist',
+      '/dashboard/receptionist/appointments',
+      '/dashboard/receptionist/billing',
+      '/dashboard/receptionist/payments',
+      '/dashboard/patients',
+      '/dashboard/appointments'
+    ].includes(item.href)
+  }
+
+  // Default fallback for Admin (sees everything except AI Assistant)
+  if (userRole === 'ADMIN') {
+    // Admins don't need AI Assistant - it's for doctors and patients
+    if (item.href === '/dashboard/ai') return false
+    return true
+  }
 
   return false
 }
 
 interface AppSidebarProps extends HTMLMotionProps<'div'> {
   userRole?: string
+  userEmail?: string
 }
 
-export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
+export function AppSidebar({ className, userRole, userEmail, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [bedAllocation, setBedAllocation] = useState<any>(null)
 
+  // Fetch bed allocation for patients
+  useEffect(() => {
+    if (userRole === 'PATIENT' && userEmail) {
+      getPatientBedAllocation(userEmail)
+        .then(setBedAllocation)
+        .catch(() => setBedAllocation(null))
+    }
+  }, [userRole, userEmail])
 
-  const filteredNavItems = navigationItems.filter(item => shouldShowItem(item, userRole))
+  // Memoize filtered items to ensure consistent rendering during hydration
+  const filteredNavItems = useMemo(() => {
+    return navigationItems.filter(item => shouldShowItem(item, userRole))
+  }, [userRole])
 
   return (
     <motion.div
+      suppressHydrationWarning
       initial={{ width: 256 }}
       animate={{ width: isCollapsed ? 80 : 256 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
@@ -187,6 +286,7 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
       <Button
         variant="ghost"
         size="icon"
+        suppressHydrationWarning
         className="absolute -right-3 top-6 z-20 h-6 w-6 rounded-full border border-border bg-background shadow-sm hover:bg-accent"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
@@ -209,15 +309,46 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto px-3">
+        {/* Patient Bed Info */}
+        {userRole === 'PATIENT' && bedAllocation && !isCollapsed && (
+          <Card className="mb-4 bg-primary/5 border-primary/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Bed className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary">Your Bed</span>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ward:</span>
+                  <span className="font-medium">{bedAllocation.bed?.ward?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bed:</span>
+                  <span className="font-medium">{bedAllocation.bed?.bed_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Type:</span>
+                  <Badge variant="outline" className="h-4 text-[10px]">{bedAllocation.bed?.type}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Floor:</span>
+                  <span className="font-medium">{bedAllocation.bed?.ward?.floor_number || 'G'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <nav className="space-y-1.5">
-          {filteredNavItems.map((item, index) => {
+          {filteredNavItems.map((item) => {
             const isActive = pathname === item.href
 
             return (
-              <div key={item.href}>
+              <div key={`${item.href}-${item.title}`}>
                 <Link href={item.href}>
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
+                    suppressHydrationWarning
                     className={cn(
                       'w-full justify-start gap-3 transition-all duration-200',
                       isActive && 'bg-primary/10 text-primary hover:bg-primary/15',

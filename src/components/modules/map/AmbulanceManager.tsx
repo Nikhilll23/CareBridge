@@ -65,8 +65,8 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
     return (
         <Card className="h-[600px] overflow-hidden flex flex-col">
             <CardHeader>
-                <CardTitle className="text-base">Ambulance Fleet</CardTitle>
-                <CardDescription>Live status updates</CardDescription>
+                <CardTitle className="text-base">{userRole === 'PATIENT' ? 'Nearby Ambulances' : 'Ambulance Fleet'}</CardTitle>
+                <CardDescription>{userRole === 'PATIENT' ? 'Live availability status' : 'Manage fleet status'}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-0">
                 <div className="divide-y">
@@ -86,20 +86,26 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <Select
-                                    disabled={updatingId === amb.id}
-                                    onValueChange={(val) => handleStatusChange(amb.id, val as any)}
-                                    defaultValue={amb.status}
-                                >
-                                    <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue placeholder="Update Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="AVAILABLE">Available</SelectItem>
-                                        <SelectItem value="BUSY">Busy</SelectItem>
-                                        <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {userRole === 'ADMIN' ? (
+                                    <Select
+                                        disabled={updatingId === amb.id}
+                                        onValueChange={(val) => handleStatusChange(amb.id, val as any)}
+                                        defaultValue={amb.status}
+                                    >
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue placeholder="Update Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="AVAILABLE">Available</SelectItem>
+                                            <SelectItem value="BUSY">Busy</SelectItem>
+                                            <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <span className="text-xs text-muted-foreground italic mr-2">
+                                        View Only
+                                    </span>
+                                )}
                                 {updatingId === amb.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
 
                                 {userRole === 'ADMIN' && (
@@ -133,6 +139,13 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                     </AlertDialog>
                                 )}
                             </div>
+
+                            {/* Patient view - read-only location info */}
+                            {userRole === 'PATIENT' && amb.current_lat && amb.current_lng && (
+                                <p className="text-xs text-muted-foreground">
+                                    📍 Location: {amb.current_lat.toFixed(4)}, {amb.current_lng.toFixed(4)}
+                                </p>
+                            )}
                         </div>
                     ))}
                 </div>

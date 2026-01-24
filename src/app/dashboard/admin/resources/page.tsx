@@ -11,13 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Stethoscope, AlertTriangle, User, MapPin, Wrench } from 'lucide-react'
+import { Stethoscope, AlertTriangle, User, MapPin, Wrench, Search } from 'lucide-react'
+import { FDASearchPanel } from '@/components/modules/pharmacy'
 
 export default function ResourceDashboard() {
     const [assets, setAssets] = useState<any[]>([])
     const [roster, setRoster] = useState<any[]>([])
     const [stats, setStats] = useState<any>(null)
     const [search, setSearch] = useState('')
+    const [isFdaOpen, setIsFdaOpen] = useState(false)
 
     // Roster Form
     const [staffName, setStaffName] = useState('')
@@ -82,10 +84,15 @@ export default function ResourceDashboard() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Wrench className="h-8 w-8 text-primary" />
-                Resource Utilisation
-            </h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold flex items-center gap-2">
+                    <Wrench className="h-8 w-8 text-primary" />
+                    Resource Utilisation
+                </h1>
+                <Button variant="outline" onClick={() => setIsFdaOpen(true)} className="gap-2">
+                    <Search className="h-4 w-4" /> FDA Drug Database
+                </Button>
+            </div>
 
             {/* Critical Alert Widget */}
             {stats?.ventilator.available < 2 && (
@@ -216,6 +223,7 @@ export default function ResourceDashboard() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <FDASearchPanel isOpen={isFdaOpen} onClose={() => setIsFdaOpen(false)} />
         </div>
     )
 }

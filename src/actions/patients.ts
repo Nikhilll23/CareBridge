@@ -22,9 +22,24 @@ const patientSchema = z.object({
 
 async function generateUHID(): Promise<string> {
   const year = new Date().getFullYear()
-  // Get count to generate sequence
-  const { count } = await supabaseAdmin.from('patients').select('*', { count: 'exact', head: true })
-  const sequence = (count || 0) + 1
+
+  // Get the latest UHID to determine next sequence
+  const { data: latest } = await supabaseAdmin
+    .from('patients')
+    .select('*')
+    .ilike('uhid', `HIS-${year}-%`)
+    .order('uhid', { ascending: false })
+    .limit(1)
+    .single()
+
+  let sequence = 1
+  if (latest?.uhid) {
+    const parts = latest.uhid.split('-')
+    if (parts.length === 3) {
+      sequence = parseInt(parts[2]) + 1
+    }
+  }
+
   // Format: HIS-2024-000001
   return `HIS-${year}-${String(sequence).padStart(6, '0')}`
 }
@@ -86,8 +101,7 @@ export async function registerPatient(data: PatientFormValues) {
         address: validatedData.address,
         uhid: uhid,
         govt_id_type: validatedData.govtIdType || null,
-        govt_id_number: validatedData.govtIdNumber || null,
-        is_verified: !!validatedData.govtIdNumber
+        govt_id_number: validatedData.govtIdNumber || null
       })
       .select()
       .single()
@@ -271,10 +285,37 @@ export async function syncPatientToHIE(patientId: string) {
  */
 export async function getPatients(): Promise<Patient[]> {
   try {
-    const { data, error } = await supabaseAdmin
+    const user = await currentUser()
+    if (!user) return []
+
+    // Check Role
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    let query = supabaseAdmin
       .from('patients')
       .select('*')
       .order('created_at', { ascending: false })
+
+    // If Doctor, filter by appointments
+    if (userData?.role === 'DOCTOR') {
+      const { data: appts } = await supabaseAdmin
+        .from('appointments')
+        .select('patient_id')
+        .eq('doctor_id', user.id)
+
+      const patientIds = appts?.map(a => a.patient_id) || []
+
+      // If no patients, return empty (otherwise .in() with empty array returns nothing correctly or error?)
+      if (patientIds.length === 0) return []
+
+      query = query.in('id', patientIds)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching patients:', error)
@@ -808,10 +849,9 @@ export async function registerEmergencyPatient(gender: 'Male' | 'Female' | 'Othe
         last_name: lastName,
         date_of_birth: dob,
         gender: gender,
-        contact_number: '0000000000', // Placeholder
+        contact_number: `999${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`, // Random Mock Number
         address: 'Emergency Admission',
-        uhid: uhid,
-        is_verified: false
+        uhid: uhid
       })
       .select()
       .single()
@@ -833,9 +873,9 @@ export async function registerEmergencyPatient(gender: 'Male' | 'Female' | 'Othe
 
     revalidatePath('/dashboard/patients')
     return { success: true, data: patient }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in registerEmergencyPatient:', error)
-    return { success: false, error: 'Failed to register emergency patient' }
+    return { success: false, error: error.message || 'Failed to register emergency patient' }
   }
 }
 

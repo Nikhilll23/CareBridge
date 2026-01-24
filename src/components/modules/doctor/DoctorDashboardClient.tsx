@@ -92,10 +92,10 @@ export function DoctorDashboardClient({ stats, appointments, doctorName }: Docto
                                                 {appt.status}
                                             </Badge>
 
-                                            {appt.status === 'SCHEDULED' && (
+                                            {appt.status !== 'COMPLETED' && (
                                                 <Button size="sm" onClick={() => setSelectedAppointment(appt)}>
                                                     <PlayCircle className="h-4 w-4 mr-2" />
-                                                    Start Consult
+                                                    {appt.status === 'SCHEDULED' ? 'Start Consult' : 'Resume Consult'}
                                                 </Button>
                                             )}
                                         </div>

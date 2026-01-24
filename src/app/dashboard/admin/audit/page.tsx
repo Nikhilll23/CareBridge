@@ -8,9 +8,9 @@ export const dynamic = 'force-dynamic'
 
 // Helper function to get stats since we separate stats logic for cleaner code
 async function getAuditStats() {
-  const data = await getAuditLogs()
+  const logs = await getAuditLogs(100)
 
-  if (!data || data.length === 0) return {
+  if (!logs) return {
     activitiesToday: 0,
     totalEvents: 0,
     userActions: 0,
@@ -18,12 +18,12 @@ async function getAuditStats() {
   }
 
   const today = new Date().toDateString()
-  const activitiesToday = data.filter((log: any) => new Date(log.timestamp).toDateString() === today).length
-  const userActions = data.filter((log: any) => log.entity === 'USER').length
+  const activitiesToday = logs.filter(log => new Date(log.created_at).toDateString() === today).length
+  const userActions = logs.filter(log => log.entity === 'USER').length
 
   return {
     activitiesToday,
-    totalEvents: data.length, // Limit implies this is recent events
+    totalEvents: logs.length, // Limit implies this is recent events
     userActions,
     criticalAlerts: 0
   }
@@ -31,7 +31,7 @@ async function getAuditStats() {
 
 export default async function AuditLogsPage() {
   const stats = await getAuditStats()
-  const logs = await getAuditLogs()
+  const logs = await getAuditLogs(100)
 
   return (
     <div className="space-y-6">
