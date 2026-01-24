@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { NavItem } from '@/types'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 
 export const navigationItems: NavItem[] = [
@@ -230,8 +230,10 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
-
-  const filteredNavItems = navigationItems.filter(item => shouldShowItem(item, userRole))
+  // Memoize filtered items to ensure consistent rendering during hydration
+  const filteredNavItems = useMemo(() => {
+    return navigationItems.filter(item => shouldShowItem(item, userRole))
+  }, [userRole])
 
   return (
     <motion.div
@@ -273,11 +275,11 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto px-3">
         <nav className="space-y-1.5">
-          {filteredNavItems.map((item, index) => {
+          {filteredNavItems.map((item) => {
             const isActive = pathname === item.href
 
             return (
-              <div key={item.href}>
+              <div key={`${item.href}-${item.title}`}>
                 <Link href={item.href}>
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
