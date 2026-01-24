@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import type { ComponentProps, ReactNode } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { FacebookIcon, FrameIcon, InstagramIcon, LinkedinIcon, YoutubeIcon } from 'lucide-react';
 
 interface FooterLink {
@@ -19,10 +19,11 @@ const footerLinks: FooterSection[] = [
 	{
 		label: 'Product',
 		links: [
-			{ title: 'Features', href: '#features' },
-			{ title: 'Pricing', href: '#pricing' },
-			{ title: 'Testimonials', href: '#testimonials' },
-			{ title: 'Integration', href: '/' },
+			{ title: 'Features', href: '/features' },
+			{ title: 'Pricing', href: '/pricing' },
+			{ title: 'Solution', href: '/solution' },
+			{ title: 'Testimonials', href: '/testimonials' },
+			{ title: 'Integration', href: '/integration' },
 		],
 	},
 	{
@@ -63,11 +64,13 @@ export function Footer() {
 				<div className="max-w-7xl mx-auto flex flex-col gap-12 xl:flex-row xl:justify-between xl:items-start">
 					<AnimatedContainer className="space-y-2 flex flex-col items-start justify-start xl:flex-shrink-0">
 						<div className="flex items-center gap-2">
-							<FrameIcon className="size-6" />
-							<span className="font-bold">Asme</span>
+							<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
+								<span className="text-xs font-bold text-primary-foreground">H</span>
+							</div>
+							<span className="font-bold">HIS Core</span>
 						</div>
 						<p className="text-muted-foreground text-xs">
-							© {new Date().getFullYear()} Asme. All rights reserved.
+							© {new Date().getFullYear()} HIS Core. All rights reserved.
 						</p>
 					</AnimatedContainer>
 
