@@ -26,7 +26,7 @@ async function generateUHID(): Promise<string> {
   // Get the latest UHID to determine next sequence
   const { data: latest } = await supabaseAdmin
     .from('patients')
-    .select('uhid')
+    .select('*')
     .ilike('uhid', `HIS-${year}-%`)
     .order('uhid', { ascending: false })
     .limit(1)
@@ -101,8 +101,7 @@ export async function registerPatient(data: PatientFormValues) {
         address: validatedData.address,
         uhid: uhid,
         govt_id_type: validatedData.govtIdType || null,
-        govt_id_number: validatedData.govtIdNumber || null,
-        is_verified: !!validatedData.govtIdNumber
+        govt_id_number: validatedData.govtIdNumber || null
       })
       .select()
       .single()
@@ -852,8 +851,7 @@ export async function registerEmergencyPatient(gender: 'Male' | 'Female' | 'Othe
         gender: gender,
         contact_number: `999${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`, // Random Mock Number
         address: 'Emergency Admission',
-        uhid: uhid,
-        is_verified: false
+        uhid: uhid
       })
       .select()
       .single()

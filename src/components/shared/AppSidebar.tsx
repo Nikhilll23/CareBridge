@@ -249,6 +249,7 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
       <Button
         variant="ghost"
         size="icon"
+        suppressHydrationWarning
         className="absolute -right-3 top-6 z-20 h-6 w-6 rounded-full border border-border bg-background shadow-sm hover:bg-accent"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
@@ -280,6 +281,7 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
                 <Link href={item.href}>
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
+                    suppressHydrationWarning
                     className={cn(
                       'w-full justify-start gap-3 transition-all duration-200',
                       isActive && 'bg-primary/10 text-primary hover:bg-primary/15',
