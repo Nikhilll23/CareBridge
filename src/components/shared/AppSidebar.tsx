@@ -32,8 +32,11 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { NavItem } from '@/types'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { getPatientBedAllocation } from '@/actions/beds'
 
 
 export const navigationItems: NavItem[] = [
@@ -201,7 +204,7 @@ const shouldShowItem = (item: NavItem, role?: string) => {
   // Patient items
   if (userRole === 'PATIENT') {
     // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing', '/dashboard/beds'].includes(item.href)
   }
 
   // Nurse items
@@ -224,11 +227,22 @@ const shouldShowItem = (item: NavItem, role?: string) => {
 
 interface AppSidebarProps extends HTMLMotionProps<'div'> {
   userRole?: string
+  userEmail?: string
 }
 
-export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
+export function AppSidebar({ className, userRole, userEmail, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [bedAllocation, setBedAllocation] = useState<any>(null)
+
+  // Fetch bed allocation for patients
+  useEffect(() => {
+    if (userRole === 'PATIENT' && userEmail) {
+      getPatientBedAllocation(userEmail)
+        .then(setBedAllocation)
+        .catch(() => setBedAllocation(null))
+    }
+  }, [userRole, userEmail])
 
   // Memoize filtered items to ensure consistent rendering during hydration
   const filteredNavItems = useMemo(() => {
@@ -274,6 +288,36 @@ export function AppSidebar({ className, userRole, ...props }: AppSidebarProps) {
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto px-3">
+        {/* Patient Bed Info */}
+        {userRole === 'PATIENT' && bedAllocation && !isCollapsed && (
+          <Card className="mb-4 bg-primary/5 border-primary/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Bed className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary">Your Bed</span>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ward:</span>
+                  <span className="font-medium">{bedAllocation.bed?.ward?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bed:</span>
+                  <span className="font-medium">{bedAllocation.bed?.bed_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Type:</span>
+                  <Badge variant="outline" className="h-4 text-[10px]">{bedAllocation.bed?.type}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Floor:</span>
+                  <span className="font-medium">{bedAllocation.bed?.ward?.floor_number || 'G'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <nav className="space-y-1.5">
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href

@@ -58,7 +58,7 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
                 setDoctorId(undefined)
                 setDate(undefined)
             } else {
-                toast.error('Failed to book')
+                toast.error(res.error || 'Failed to book')
             }
         } catch (err) {
             toast.error('An error occurred')

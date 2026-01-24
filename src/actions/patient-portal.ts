@@ -124,17 +124,18 @@ export async function bookAppointment(data: any) {
                 doctor_id: data.doctorId, // Optional or assigned
                 appointment_date: data.date, // ISO string
                 reason: data.reason,
-                status: 'PENDING', // Waiting approval
-                type: 'General' // Default
+                status: 'SCHEDULED', // Waiting approval
             })
 
         if (error) throw error
 
         revalidatePath('/dashboard/patient')
+        revalidatePath('/dashboard/appointments') // Admin view
+        revalidatePath('/dashboard/doctor') // Doctor view
         return { success: true }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Booking Error:', error)
-        return { success: false, error: 'Failed to book appointment' }
+        return { success: false, error: error.message || 'Failed to book appointment' }
     }
 }
 
