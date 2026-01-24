@@ -43,9 +43,19 @@ export function RosterManager({ roster, stats, staffList, isAdmin }: RosterManag
                     <p className="text-muted-foreground mt-2">Staff scheduling and shift management</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline"><ChevronLeft className="h-4 w-4" /></Button>
+                    <Button variant="outline" onClick={() => {
+                        const prev = new Date(today)
+                        prev.setDate(prev.getDate() - 1)
+                        setToday(prev)
+                        router.push(`/dashboard/admin/roster?date=${prev.toISOString()}`)
+                    }}><ChevronLeft className="h-4 w-4" /></Button>
                     <div className="font-semibold">{today.toDateString()}</div>
-                    <Button variant="outline"><ChevronRight className="h-4 w-4" /></Button>
+                    <Button variant="outline" onClick={() => {
+                        const next = new Date(today)
+                        next.setDate(next.getDate() + 1)
+                        setToday(next)
+                        router.push(`/dashboard/admin/roster?date=${next.toISOString()}`)
+                    }}><ChevronRight className="h-4 w-4" /></Button>
                     {isAdmin && (
                         <Button onClick={() => setEditOpen(true)}>Edit Roster</Button>
                     )}

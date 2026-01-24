@@ -1,6 +1,7 @@
 import { getPatientPortalData } from '@/actions/patient-portal'
 import { QuickBook } from '@/components/modules/patient/QuickBook'
 import { SymptomLogger } from '@/components/modules/patient/SymptomLogger'
+import { PatientPaymentSection } from '@/components/modules/patient/PatientPaymentSection'
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,8 +33,14 @@ export default async function PatientDashboard() {
         )
     }
 
-    const { patient, upcoming, past, totalDue, availableDoctors } = data
+    const { patient, upcoming, past, totalDue, availableDoctors, invoices } = data
     const nextVisit = upcoming[0]
+
+    console.log('--- Patient Dashboard Debug ---')
+    console.log('Patient ID:', patient.id)
+    console.log('Total Due:', totalDue)
+    console.log('Invoices Count:', invoices?.length)
+    console.log('-------------------------------')
 
     return (
         <div className="space-y-6">
@@ -43,13 +50,7 @@ export default async function PatientDashboard() {
                     <p className="text-muted-foreground">Welcome back, {patient.first_name} {patient.last_name}</p>
                 </div>
 
-                {totalDue > 0 && (
-                    <Link href="/dashboard/patient/billing">
-                        <Button variant="destructive" className="animate-pulse">
-                            Pay Outstanding: ${(totalDue / 100).toFixed(2)}
-                        </Button>
-                    </Link>
-                )}
+                <PatientPaymentSection patientId={patient.id} totalDue={totalDue} />
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">

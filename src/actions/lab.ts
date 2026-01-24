@@ -86,7 +86,13 @@ export async function getLabOrders(status?: string) {
         q = q.eq('status', status)
     }
 
-    const { data } = await q
+    const { data, error } = await q
+    if (error) console.error('Error fetching lab orders:', error)
+    console.log('Lab Orders Fetched:', data?.length)
+    if (data && data.length > 0) {
+        console.log('First Order Status:', data[0].status)
+        console.log('First Order Patient:', data[0].patients)
+    }
     return data || []
 }
 

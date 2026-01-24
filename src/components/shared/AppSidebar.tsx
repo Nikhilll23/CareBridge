@@ -22,6 +22,12 @@ import {
   FileText,
   BarChart3,
   Bed,
+  FlaskConical,
+  Scissors,
+  Package,
+  AlertTriangle,
+  Receipt,
+  Wrench
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -54,9 +60,19 @@ export const navigationItems: NavItem[] = [
     icon: Bed,
   },
   {
+    title: 'Diagnostic Lab',
+    href: '/dashboard/lab',
+    icon: FlaskConical,
+  },
+  {
     title: 'Radiology',
     href: '/dashboard/radiology',
     icon: ActivitySquare,
+  },
+  {
+    title: 'Operation Theatre',
+    href: '/dashboard/ot',
+    icon: Scissors,
   },
   {
     title: 'Pharmacy',
@@ -73,7 +89,7 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/ai',
     icon: Brain,
   },
-
+  // Operations Section
   {
     title: 'Staff Directory',
     href: '/dashboard/admin/staff',
@@ -84,7 +100,27 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/admin/roster',
     icon: CalendarClock,
   },
+  {
+    title: 'Inventory & Store',
+    href: '/dashboard/admin/inventory',
+    icon: Package,
+  },
+  {
+    title: 'Resources',
+    href: '/dashboard/admin/resources',
+    icon: Wrench,
+  },
+  {
+    title: 'Risk & Safety',
+    href: '/dashboard/admin/risk',
+    icon: AlertTriangle,
+  },
   // Finance Section
+  {
+    title: 'Billing',
+    href: '/dashboard/admin/billing',
+    icon: Receipt,
+  },
   {
     title: 'Revenue & Claims',
     href: '/dashboard/admin/finance',
@@ -131,7 +167,10 @@ const shouldShowItem = (item: NavItem, role?: string) => {
     '/dashboard/admin/insurance',
     '/dashboard/admin/map',
     '/dashboard/admin/audit',
-    '/dashboard/inventory', // Admin full access
+    '/dashboard/admin/inventory',
+    '/dashboard/admin/risk',
+    '/dashboard/admin/billing',
+    '/dashboard/admin/resources',
     '/admin', // Analytics
   ]
 
@@ -141,18 +180,34 @@ const shouldShowItem = (item: NavItem, role?: string) => {
 
   // Doctor items
   if (userRole === 'DOCTOR') {
-    return ['/dashboard/appointments', '/dashboard/patients', '/dashboard/radiology', '/dashboard/ai', '/dashboard/pharmacy', '/dashboard/beds'].includes(item.href)
+    return [
+      '/dashboard/appointments',
+      '/dashboard/patients',
+      '/dashboard/radiology',
+      '/dashboard/ai',
+      '/dashboard/pharmacy',
+      '/dashboard/beds',
+      '/dashboard/lab',
+      '/dashboard/ot'
+    ].includes(item.href)
   }
 
   // Patient items
   if (userRole === 'PATIENT') {
     // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/pharmacy', '/dashboard/ai', '/dashboard/patient/emergency'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency'].includes(item.href)
   }
 
   // Nurse items
   if (userRole === 'NURSE') {
-    return ['/dashboard/patients', '/dashboard/appointments', '/dashboard/pharmacy', '/dashboard/ai', '/dashboard/beds'].includes(item.href)
+    return [
+      '/dashboard/patients',
+      '/dashboard/appointments',
+      '/dashboard/pharmacy',
+      '/dashboard/ai',
+      '/dashboard/beds',
+      '/dashboard/lab'
+    ].includes(item.href)
   }
 
   // Default fallback for Admin (sees everything unless explicitly excluded)

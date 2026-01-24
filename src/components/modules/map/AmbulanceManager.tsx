@@ -65,10 +65,8 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
     return (
         <Card className="h-[600px] overflow-hidden flex flex-col">
             <CardHeader>
-                <CardTitle className="text-base">Ambulance Fleet</CardTitle>
-                <CardDescription>
-                    {userRole === 'ADMIN' ? 'Manage fleet status' : 'Live availability status'}
-                </CardDescription>
+                <CardTitle className="text-base">{userRole === 'PATIENT' ? 'Nearby Ambulances' : 'Ambulance Fleet'}</CardTitle>
+                <CardDescription>{userRole === 'PATIENT' ? 'Live availability status' : 'Manage fleet status'}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-0">
                 <div className="divide-y">
@@ -87,9 +85,8 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                 </Badge>
                             </div>
 
-                            {/* Admin controls - only show status change and delete for admins */}
-                            {userRole === 'ADMIN' && (
-                                <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
+                                {userRole === 'ADMIN' ? (
                                     <Select
                                         disabled={updatingId === amb.id}
                                         onValueChange={(val) => handleStatusChange(amb.id, val as any)}
@@ -104,9 +101,14 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                             <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {updatingId === amb.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                ) : (
+                                    <span className="text-xs text-muted-foreground italic mr-2">
+                                        View Only
+                                    </span>
+                                )}
+                                {updatingId === amb.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
 
-                                    {/* Delete button - admin only */}
+                                {userRole === 'ADMIN' && (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
@@ -135,8 +137,8 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-                                </div>
-                            )}
+                                )}
+                            </div>
 
                             {/* Patient view - read-only location info */}
                             {userRole === 'PATIENT' && amb.current_lat && amb.current_lng && (

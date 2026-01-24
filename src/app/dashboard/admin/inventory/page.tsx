@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getInventory, getVendors, createPO, getPurchaseOrders, receiveGoods } from '@/actions/inventory'
+import { getInventory, getVendors, createPO, getPurchaseOrders, receiveGoods, addInventoryItem, deleteInventoryItem } from '@/actions/inventory'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,6 +22,10 @@ export default function InventoryDashboard() {
     // New PO State
     const [isPOOpen, setIsPOOpen] = useState(false)
     const [newPO, setNewPO] = useState({ vendorId: '', drugName: '', qty: 0 })
+
+    // Manual Add State
+    const [isAddOpen, setIsAddOpen] = useState(false)
+    const [newItem, setNewItem] = useState({ drug_name: '', category: 'ANTIBIOTICS', stock_quantity: 0, unit_price: 0, batch_number: '', expiry_date: '' })
 
     // GRN State
     const [selectedPO, setSelectedPO] = useState<any>(null) // For receiving
@@ -61,6 +65,13 @@ export default function InventoryDashboard() {
         refresh()
     }
 
+    const handleAddItem = async () => {
+        await addInventoryItem(newItem)
+        setIsAddOpen(false)
+        toast.success('Item Added to Inventory')
+        refresh()
+    }
+
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -89,9 +100,41 @@ export default function InventoryDashboard() {
                     </div>
 
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Master Inventory</CardTitle>
-                            <CardDescription>Live view of pharmacy stock levels</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Master Inventory</CardTitle>
+                                <CardDescription>Live view of pharmacy stock levels</CardDescription>
+                            </div>
+                            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Item</Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader><DialogTitle>Add Inventory Item</DialogTitle></DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input placeholder="Drug Name" onChange={e => setNewItem({ ...newItem, drug_name: e.target.value })} />
+                                            <Select onValueChange={v => setNewItem({ ...newItem, category: v })} defaultValue="ANTIBIOTICS">
+                                                <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ANTIBIOTICS">Antibiotics</SelectItem>
+                                                    <SelectItem value="ANALGESICS">Analgesics</SelectItem>
+                                                    <SelectItem value="VITAMINS">Vitamins</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input type="number" placeholder="Qty" onChange={e => setNewItem({ ...newItem, stock_quantity: parseInt(e.target.value) })} />
+                                            <Input type="number" placeholder="Price" onChange={e => setNewItem({ ...newItem, unit_price: parseFloat(e.target.value) })} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input placeholder="Batch #" onChange={e => setNewItem({ ...newItem, batch_number: e.target.value })} />
+                                            <Input type="date" onChange={e => setNewItem({ ...newItem, expiry_date: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <DialogFooter><Button onClick={handleAddItem}>Save Item</Button></DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </CardHeader>
                         <CardContent>
                             <Table>

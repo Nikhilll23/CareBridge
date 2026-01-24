@@ -12,6 +12,7 @@ interface PaymentButtonProps {
     amount: number
     description?: string
     onSuccess?: () => void
+    className?: string
 }
 
 declare global {
@@ -20,7 +21,7 @@ declare global {
     }
 }
 
-export function PaymentButton({ patientId, amount, description, onSuccess }: PaymentButtonProps) {
+export function PaymentButton({ patientId, amount, description, onSuccess, className }: PaymentButtonProps) {
     const [loading, setLoading] = useState(false)
 
     const handlePayment = async () => {
@@ -55,6 +56,12 @@ export function PaymentButton({ patientId, amount, description, onSuccess }: Pay
             },
             theme: {
                 color: '#3399cc'
+            },
+            modal: {
+                ondismiss: function () {
+                    toast.info('Payment Cancelled')
+                    setLoading(false)
+                }
             }
         }
 
@@ -72,7 +79,7 @@ export function PaymentButton({ patientId, amount, description, onSuccess }: Pay
         <>
             <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-            <Button onClick={handlePayment} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handlePayment} disabled={loading} className={`bg-blue-600 hover:bg-blue-700 ${className || 'w-full'}`}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                 Pay ₹{amount}
             </Button>
