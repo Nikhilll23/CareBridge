@@ -7,12 +7,38 @@ import { currentUser } from '@clerk/nextjs/server'
 
 export async function updateAmbulanceStatus(id: string, status: 'AVAILABLE' | 'BUSY' | 'MAINTENANCE') {
     try {
+        const user = await currentUser()
+        if (!user) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        // Check permissions (Admin only)
+        const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (!userData || userData.role !== 'ADMIN') {
+            return { success: false, error: 'Only admins can update ambulance status' }
+        }
+
         const { error } = await supabaseAdmin
             .from('ambulances')
             .update({ status })
             .eq('id', id)
 
         if (error) throw error
+
+        await logAuditAction(
+            'UPDATE_AMBULANCE_STATUS',
+            'AMBULANCE',
+            id,
+            {
+                newStatus: status,
+                updatedBy: user.emailAddresses[0]?.emailAddress
+            }
+        )
 
         revalidatePath('/dashboard/admin/map')
         return { success: true }

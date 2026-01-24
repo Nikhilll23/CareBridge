@@ -66,7 +66,9 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
         <Card className="h-[600px] overflow-hidden flex flex-col">
             <CardHeader>
                 <CardTitle className="text-base">Ambulance Fleet</CardTitle>
-                <CardDescription>Live status updates</CardDescription>
+                <CardDescription>
+                    {userRole === 'ADMIN' ? 'Manage fleet status' : 'Live availability status'}
+                </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-0">
                 <div className="divide-y">
@@ -85,24 +87,26 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                 </Badge>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <Select
-                                    disabled={updatingId === amb.id}
-                                    onValueChange={(val) => handleStatusChange(amb.id, val as any)}
-                                    defaultValue={amb.status}
-                                >
-                                    <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue placeholder="Update Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="AVAILABLE">Available</SelectItem>
-                                        <SelectItem value="BUSY">Busy</SelectItem>
-                                        <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {updatingId === amb.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                            {/* Admin controls - only show status change and delete for admins */}
+                            {userRole === 'ADMIN' && (
+                                <div className="flex items-center gap-2">
+                                    <Select
+                                        disabled={updatingId === amb.id}
+                                        onValueChange={(val) => handleStatusChange(amb.id, val as any)}
+                                        defaultValue={amb.status}
+                                    >
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue placeholder="Update Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="AVAILABLE">Available</SelectItem>
+                                            <SelectItem value="BUSY">Busy</SelectItem>
+                                            <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {updatingId === amb.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
 
-                                {userRole === 'ADMIN' && (
+                                    {/* Delete button - admin only */}
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
@@ -131,8 +135,15 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-                                )}
-                            </div>
+                                </div>
+                            )}
+
+                            {/* Patient view - read-only location info */}
+                            {userRole === 'PATIENT' && amb.current_lat && amb.current_lng && (
+                                <p className="text-xs text-muted-foreground">
+                                    📍 Location: {amb.current_lat.toFixed(4)}, {amb.current_lng.toFixed(4)}
+                                </p>
+                            )}
                         </div>
                     ))}
                 </div>

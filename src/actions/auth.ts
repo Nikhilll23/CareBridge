@@ -29,6 +29,8 @@ export async function syncUser(): Promise<UserProfile | null> {
       return null
     }
 
+    console.log('Syncing user:', { userId, email, firstName, lastName })
+
     // Determine role based on email rules
     let role = 'PATIENT' // Default
     const lowerEmail = email.toLowerCase()
@@ -141,7 +143,7 @@ export async function syncUser(): Promise<UserProfile | null> {
     const { data: newUser, error: insertError } = await supabaseAdmin
       .from('users')
       .insert({
-        id: userId,
+        id: userId,  // Clerk ID is used directly as the primary key
         email: email,
         first_name: firstName,
         last_name: lastName,
@@ -157,6 +159,48 @@ export async function syncUser(): Promise<UserProfile | null> {
         details: insertError.details,
         hint: insertError.hint
       })
+      
+      // If it's a duplicate key error, the user already exists
+      if (insertError.code === '23505') {
+        // Try fetching the existing user by id or email
+        const { data: existingById } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single()
+        
+        if (existingById) {
+          return {
+            id: existingById.id,
+            email: existingById.email,
+            firstName: existingById.first_name || '',
+            lastName: existingById.last_name || '',
+            fullName: `${existingById.first_name || ''} ${existingById.last_name || ''}`.trim(),
+            role: existingById.role,
+            createdAt: new Date(existingById.created_at),
+          }
+        }
+        
+        // Try by email if id lookup failed
+        const { data: existingByEmail } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .single()
+        
+        if (existingByEmail) {
+          return {
+            id: existingByEmail.id,
+            email: existingByEmail.email,
+            firstName: existingByEmail.first_name || '',
+            lastName: existingByEmail.last_name || '',
+            fullName: `${existingByEmail.first_name || ''} ${existingByEmail.last_name || ''}`.trim(),
+            role: existingByEmail.role,
+            createdAt: new Date(existingByEmail.created_at),
+          }
+        }
+      }
+      
       throw insertError
     }
 
