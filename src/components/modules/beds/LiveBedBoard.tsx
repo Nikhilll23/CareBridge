@@ -154,10 +154,10 @@ export function LiveBedBoard() {
 
 function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
     const statusColor =
-        bed.status === 'AVAILABLE' ? 'border-green-300 bg-green-50' :
-            bed.status === 'OCCUPIED' ? 'border-red-300 bg-red-50' :
-                bed.status === 'CLEANING' ? 'border-yellow-300 bg-yellow-50' :
-                    'border-gray-300 bg-gray-50'
+        bed.status === 'AVAILABLE' ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/30' :
+            bed.status === 'OCCUPIED' ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/30' :
+                bed.status === 'CLEANING' ? 'border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-900/30' :
+                    'border-border bg-muted'
 
     return (
         <div className={`
@@ -165,15 +165,15 @@ function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
             ${statusColor}
         `}>
             <div className="absolute top-2 right-2">
-                <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-white/50 backdrop-blur-sm">
+                <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-background/50 backdrop-blur-sm">
                     {bed.status.substring(0, 4)}
                 </Badge>
             </div>
 
             <Bed className={`h-8 w-8 mb-2 
-                ${bed.status === 'AVAILABLE' ? 'text-green-600' : ''}
-                ${bed.status === 'OCCUPIED' ? 'text-red-600' : ''}
-                ${bed.status === 'CLEANING' ? 'text-yellow-600' : ''}
+                ${bed.status === 'AVAILABLE' ? 'text-green-600 dark:text-green-400' : ''}
+                ${bed.status === 'OCCUPIED' ? 'text-red-600 dark:text-red-400' : ''}
+                ${bed.status === 'CLEANING' ? 'text-yellow-600 dark:text-yellow-400' : ''}
             `} />
 
             <div>

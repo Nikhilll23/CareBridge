@@ -184,7 +184,7 @@ export default function ResourceDashboard() {
                                             </div>
                                         </div>
                                         <div className="text-right text-sm">
-                                            <div className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
+                                            <div className="font-mono text-xs bg-muted px-2 py-1 rounded">
                                                 {new Date(r.shift_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
                                                 {new Date(r.shift_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>

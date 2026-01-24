@@ -111,7 +111,7 @@ export function AlertBanner({ patientId, currentUserId }: AlertBannerProps) {
                         <div>
                             <AlertTitle className="font-bold flex items-center gap-2">
                                 {alert.type}
-                                {alert.severity === 'CRITICAL' && <span className="text-[10px] bg-red-200 px-1 rounded text-red-800">CRITICAL</span>}
+                                {alert.severity === 'CRITICAL' && <span className="text-[10px] bg-red-200 dark:bg-red-800 px-1 rounded text-red-800 dark:text-red-200">CRITICAL</span>}
                             </AlertTitle>
                             <AlertDescription className="text-sm font-medium">
                                 {alert.message}
@@ -121,7 +121,7 @@ export function AlertBanner({ patientId, currentUserId }: AlertBannerProps) {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 opacity-50 hover:opacity-100 hover:bg-white/20"
+                        className="h-8 w-8 p-0 opacity-50 hover:opacity-100 hover:bg-background/20"
                         onClick={() => handleResolve(alert.id)}
                     >
                         <XCircle className="h-5 w-5" />

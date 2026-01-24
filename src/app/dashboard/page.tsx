@@ -98,8 +98,8 @@ export default async function DashboardPage() {
               <p className="text-2xl font-bold text-foreground">{stats.totalPatients.toLocaleString()}</p>
               <p className="text-xs text-green-600 mt-1">Registered patients</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <Users className="h-6 w-6 text-blue-600" />
+            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+              <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
         </div>
@@ -111,10 +111,10 @@ export default async function DashboardPage() {
                 Appointments Today
               </p>
               <p className="text-2xl font-bold text-foreground">{stats.appointmentsToday}</p>
-              <p className="text-xs text-blue-600 mt-1">{stats.pendingAppts} pending confirmations</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{stats.pendingAppts} pending confirmations</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-green-600" />
+            <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
           </div>
         </div>
@@ -126,10 +126,10 @@ export default async function DashboardPage() {
                 Active Staff
               </p>
               <p className="text-2xl font-bold text-foreground">{stats.activeStaff}</p>
-              <p className="text-xs text-slate-600 mt-1">Doctors, Nurses & Staff</p>
+              <p className="text-xs text-muted-foreground mt-1">Doctors, Nurses & Staff</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <Activity className="h-6 w-6 text-purple-600" />
+            <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+              <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
         </div>
@@ -141,10 +141,10 @@ export default async function DashboardPage() {
                 Revenue
               </p>
               <p className="text-2xl font-bold text-foreground">${(stats.monthlyRevenue / 1000).toFixed(1)}K</p>
-              <p className="text-xs text-green-600 mt-1">This month</p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">This month</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-yellow-600" />
+            <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
             </div>
           </div>
         </div>

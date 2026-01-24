@@ -78,8 +78,8 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
                                     <p className="text-xs text-muted-foreground">{amb.driver_name || 'No Data'}</p>
                                 </div>
                                 <Badge variant={amb.status === 'AVAILABLE' ? 'default' : 'secondary'} className={
-                                    amb.status === 'AVAILABLE' ? 'bg-green-600' :
-                                        amb.status === 'BUSY' ? 'bg-red-600' : 'bg-gray-600'
+                                    amb.status === 'AVAILABLE' ? 'bg-green-600 dark:bg-green-700' :
+                                        amb.status === 'BUSY' ? 'bg-red-600 dark:bg-red-700' : 'bg-muted text-muted-foreground'
                                 }>
                                     {amb.status}
                                 </Badge>

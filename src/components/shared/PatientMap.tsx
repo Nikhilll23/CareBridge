@@ -174,7 +174,7 @@ export function PatientMap({
     <div className="relative h-[500px] rounded-lg overflow-hidden border border-border shadow-lg">
 
       {/* Name Overlay */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur px-4 py-2 rounded-full shadow-md border border-border font-semibold text-sm flex items-center gap-2">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-background/95 backdrop-blur px-4 py-2 rounded-full shadow-md border border-border font-semibold text-sm flex items-center gap-2">
         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
         {patientName}&apos;s Location
       </div>
@@ -218,10 +218,10 @@ export function PatientMap({
                   Status:{' '}
                   <span
                     className={`font-semibold ${ambulance.status === 'available'
-                      ? 'text-green-600'
+                      ? 'text-green-600 dark:text-green-400'
                       : ambulance.status === 'busy'
-                        ? 'text-orange-600'
-                        : 'text-gray-600'
+                        ? 'text-orange-600 dark:text-orange-400'
+                        : 'text-muted-foreground'
                       }`}
                   >
                     {ambulance.status.toUpperCase()}
@@ -253,7 +253,7 @@ export function PatientMap({
       </MapContainer>
 
       {/* Map Legend */}
-      <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 z-1000 border border-border">
+      <div className="absolute bottom-4 right-4 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-3 z-1000 border border-border">
         <div className="text-xs font-semibold mb-2">Legend</div>
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs">

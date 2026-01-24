@@ -5,6 +5,7 @@ import { UserButton } from '@clerk/nextjs'
 import { Menu, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import type { UserRole } from '@/types'
 import { cn } from '@/lib/utils'
 import { navigationItems } from './AppSidebar'
@@ -16,10 +17,10 @@ interface HeaderProps {
 }
 
 const roleColors: Record<UserRole, string> = {
-  ADMIN: 'bg-purple-100 text-purple-700 border-purple-300',
-  DOCTOR: 'bg-blue-100 text-blue-700 border-blue-300',
-  NURSE: 'bg-green-100 text-green-700 border-green-300',
-  PATIENT: 'bg-slate-100 text-slate-700 border-slate-300',
+  ADMIN: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700',
+  DOCTOR: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700',
+  NURSE: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700',
+  PATIENT: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-600',
 }
 
 const roleLabels: Record<UserRole, string> = {
@@ -103,6 +104,9 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
           >
             {roleLabels[userRole]}
           </div>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">
