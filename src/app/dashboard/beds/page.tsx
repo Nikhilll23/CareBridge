@@ -18,6 +18,11 @@ export default async function BedManagementPage() {
     const userRole = userData?.role || 'PATIENT'
     const userEmail = user.primaryEmailAddress?.emailAddress || ''
 
+    // Doctors cannot access bed management
+    if (userRole === 'DOCTOR') {
+        redirect('/dashboard')
+    }
+
     // Patients see only their bed, others see full board
     if (userRole === 'PATIENT') {
         return (

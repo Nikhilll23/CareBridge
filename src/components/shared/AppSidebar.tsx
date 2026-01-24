@@ -195,7 +195,6 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/radiology',
       '/dashboard/ai',
       '/dashboard/pharmacy',
-      '/dashboard/beds',
       '/dashboard/lab',
       '/dashboard/ot'
     ].includes(item.href)
