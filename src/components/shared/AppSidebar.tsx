@@ -122,6 +122,12 @@ export const navigationItems: NavItem[] = [
     icon: Receipt,
   },
   {
+    title: 'Billing & Payments',
+    href: '/dashboard/patient/billing',
+    icon: Receipt,
+  },
+
+  {
     title: 'Revenue & Claims',
     href: '/dashboard/admin/finance',
     icon: DollarSign,
@@ -195,7 +201,7 @@ const shouldShowItem = (item: NavItem, role?: string) => {
   // Patient items
   if (userRole === 'PATIENT') {
     // Patients see limited view
-    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency'].includes(item.href)
+    return ['/dashboard/appointments', '/dashboard/ai', '/dashboard/patient/emergency', '/dashboard/patient/billing'].includes(item.href)
   }
 
   // Nurse items
