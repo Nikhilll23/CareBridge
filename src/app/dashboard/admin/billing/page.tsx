@@ -63,6 +63,7 @@ export default function BillingDashboard() {
     }
 
     const handleAddCharge = async (item: any) => {
+        if (!billData?.invoice?.id) return
         await addMiscCharge(billData.invoice.id, item)
         toast.success('Charge Added')
         setTariffSearch('')
@@ -71,6 +72,7 @@ export default function BillingDashboard() {
     }
 
     const handleApplyDiscount = async () => {
+        if (!billData?.invoice?.id) return
         const res = await applyDiscount(billData.invoice.id, parseFloat(discountAmt), discountReason, adminRoleMock)
         if (res.success) {
             toast.success('Discount Approved & Applied')
@@ -160,7 +162,7 @@ export default function BillingDashboard() {
 
                 {/* RIGHT: The Bill (A4) */}
                 <div className="md:col-span-8">
-                    {billData ? (
+                    {billData && billData.invoice ? (
                         <Card className="min-h-[800px] shadow-lg print:shadow-none print:border-none">
                             <CardContent className="p-8 space-y-8">
                                 {/* Header */}
