@@ -3,7 +3,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
-// ... existing imports ...
+// --- Logging ---
 
 export async function logAuditAction(
     action: string,
@@ -27,6 +27,8 @@ export async function logAuditAction(
     }
 }
 
+// --- Retrieval ---
+
 export async function getAuditLogs(filterUserId?: string, filterRecordId?: string) {
     let query = supabaseAdmin.from('audit_logs').select('*').order('timestamp', { ascending: false }).limit(50)
 
@@ -36,6 +38,35 @@ export async function getAuditLogs(filterUserId?: string, filterRecordId?: strin
     const { data } = await query
     return data || []
 }
+
+// --- Management (Missing Functions) ---
+
+export async function deleteAuditLog(logId: string) {
+    try {
+        const { error } = await supabaseAdmin.from('audit_logs').delete().eq('id', logId)
+        if (error) throw error
+        
+        revalidatePath('/dashboard/admin/audit')
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function clearAllAuditLogs() {
+    try {
+        // Use a safe delete query (e.g., delete all)
+        const { error } = await supabaseAdmin.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000') // Trick to delete all
+        if (error) throw error
+        
+        revalidatePath('/dashboard/admin/audit')
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+// --- Emergency Access ---
 
 export async function requestEmergencyAccess(patientId: string, reason: string, userId: string) {
     try {
