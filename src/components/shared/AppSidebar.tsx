@@ -73,12 +73,7 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/ai',
     icon: Brain,
   },
-  // Operations Section
-  {
-    title: 'Emergency Map',
-    href: '/dashboard/admin/map',
-    icon: Map,
-  },
+
   {
     title: 'Staff Directory',
     href: '/dashboard/admin/staff',

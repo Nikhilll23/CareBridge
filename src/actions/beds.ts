@@ -7,10 +7,7 @@ export async function getWardStatus() {
     const { data } = await supabaseAdmin.from('wards').select(`
         *,
         beds (
-            *,
-            admission:admissions(
-                patient:patients(first_name, last_name, uhid)
-            )
+            *
         )
     `).order('name')
     return data || []

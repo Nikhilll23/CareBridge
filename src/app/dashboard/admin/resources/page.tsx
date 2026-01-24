@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Stethoscope, AlertTriangle, User, MapPin, Wrench } from 'lucide-react'
@@ -25,6 +25,11 @@ export default function ResourceDashboard() {
     const [role, setRole] = useState('NURSE')
     const [isRosterOpen, setIsRosterOpen] = useState(false)
 
+    // Assign Dialog
+    const [isAssignOpen, setIsAssignOpen] = useState(false)
+    const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null)
+    const [locationInput, setLocationInput] = useState('')
+
     useEffect(() => {
         refresh()
     }, [])
@@ -40,13 +45,19 @@ export default function ResourceDashboard() {
         getAssets(v).then(setAssets)
     }
 
-    const handleAssign = async (id: string) => {
-        const loc = prompt('Enter New Location (Ward/OT):')
-        if (loc) {
-            await assignAsset(id, loc, 'Admin')
-            toast.success('Asset Moved')
-            refresh()
-        }
+    const openAssignDialog = (id: string) => {
+        setSelectedAssetId(id)
+        setLocationInput('')
+        setIsAssignOpen(true)
+    }
+
+    const confirmAssign = async () => {
+        if (!selectedAssetId || !locationInput) return
+
+        setIsAssignOpen(false)
+        await assignAsset(selectedAssetId, locationInput, 'Admin')
+        toast.success('Asset Moved')
+        refresh()
     }
 
     const handleMaintain = async (id: string) => {
@@ -121,7 +132,7 @@ export default function ResourceDashboard() {
                                     </div>
                                     <div className="flex gap-2 mt-4">
                                         {a.status === 'AVAILABLE' && (
-                                            <Button size="sm" className="w-full" onClick={() => handleAssign(a.id)}>Assign</Button>
+                                            <Button size="sm" className="w-full" onClick={() => openAssignDialog(a.id)}>Assign</Button>
                                         )}
                                         {a.status !== 'MAINTENANCE' && (
                                             <Button size="sm" variant="outline" className="w-full" onClick={() => handleMaintain(a.id)}>Maintenance</Button>
@@ -186,6 +197,25 @@ export default function ResourceDashboard() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign Asset</DialogTitle>
+                        <DialogDescription>Select a new location for this equipment.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="loc" className="text-right">Location</Label>
+                            <Input id="loc" value={locationInput} onChange={e => setLocationInput(e.target.value)} className="col-span-3" placeholder="e.g. OT-1, Ward-A" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAssignOpen(false)}>Cancel</Button>
+                        <Button onClick={confirmAssign}>Confirm Move</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -2,15 +2,29 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
-import { getWardStatus, markBedClean, dischargePatientFromBed } from '@/actions/beds'
+import { getWardStatus, markBedClean, dischargePatientFromBed, allocateBed } from '@/actions/beds'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Bed, UserMinus, Sparkles } from 'lucide-react'
+import { Bed, UserMinus, Sparkles, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export function LiveBedBoard() {
     const [wards, setWards] = useState<any[]>([])
+    const [isAllocateOpen, setIsAllocateOpen] = useState(false)
+    const [selectedBedId, setSelectedBedId] = useState<string | null>(null)
+    const [patientIdInput, setPatientIdInput] = useState('')
+
     const supabase = createSupabaseBrowserClient()
 
     const fetchStatus = () => getWardStatus().then(setWards)
@@ -42,6 +56,23 @@ export function LiveBedBoard() {
             loading: 'Marking as Clean...',
             success: 'Bed is now AVAILABLE',
             error: 'Failed'
+        })
+    }
+
+    const openAllocateDialog = (bedId: string) => {
+        setSelectedBedId(bedId)
+        setPatientIdInput('')
+        setIsAllocateOpen(true)
+    }
+
+    const confirmAllocate = async () => {
+        if (!selectedBedId || !patientIdInput) return
+
+        setIsAllocateOpen(false) // Close immediately to feel responsive
+        toast.promise(allocateBed(patientIdInput, selectedBedId), {
+            loading: 'Allocating Bed...',
+            success: 'Bed Allocated Successfully',
+            error: 'Failed to Allocate'
         })
     }
 
@@ -78,6 +109,7 @@ export function LiveBedBoard() {
                                     bed={bed}
                                     onDischarge={() => handleDischarge(bed.id)}
                                     onClean={() => handleClean(bed.id)}
+                                    onAllocate={() => openAllocateDialog(bed.id)}
                                 />
                             ))}
                             {(!ward.beds || ward.beds.length === 0) && (
@@ -87,11 +119,40 @@ export function LiveBedBoard() {
                     </CardContent>
                 </Card>
             ))}
+
+            <Dialog open={isAllocateOpen} onOpenChange={setIsAllocateOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Allocate Bed</DialogTitle>
+                        <DialogDescription>
+                            Enter the Patient's Unique Health ID (UHID) to assign this bed.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="uhid" className="text-right">
+                                Patient UHID
+                            </Label>
+                            <Input
+                                id="uhid"
+                                value={patientIdInput}
+                                onChange={(e) => setPatientIdInput(e.target.value)}
+                                className="col-span-3"
+                                placeholder="e.g. PAT-12345"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAllocateOpen(false)}>Cancel</Button>
+                        <Button onClick={confirmAllocate}>Allocate Bed</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
 
-function BedCard({ bed, onDischarge, onClean }: any) {
+function BedCard({ bed, onDischarge, onClean, onAllocate }: any) {
     const statusColor =
         bed.status === 'AVAILABLE' ? 'border-green-300 bg-green-50' :
             bed.status === 'OCCUPIED' ? 'border-red-300 bg-red-50' :
@@ -141,7 +202,13 @@ function BedCard({ bed, onDischarge, onClean }: any) {
                     </Button>
                 )}
                 {bed.status === 'AVAILABLE' && (
-                    <div className="text-xs text-green-700 font-medium py-1">Ready</div>
+                    <Button
+                        size="sm"
+                        className="w-full h-7 text-[10px] bg-green-600 hover:bg-green-700"
+                        onClick={onAllocate}
+                    >
+                        <UserPlus className="h-3 w-3 mr-1" /> Allocate
+                    </Button>
                 )}
             </div>
         </div>

@@ -14,11 +14,10 @@ export async function logAuditAction(
     try {
         const { error } = await supabaseAdmin.from('audit_logs').insert({
             action: action,
-            table_name: table,
-            record_id: recordId,
-            new_data: details,
-            performed_by: 'SYSTEM', // Fallback
-            timestamp: new Date().toISOString()
+            entity: table,
+            entity_id: recordId,
+            details: details,
+            user_id: 'SYSTEM', // Fallback
         })
 
         if (error) console.error('Audit Log Error:', error)
@@ -45,7 +44,7 @@ export async function deleteAuditLog(logId: string) {
     try {
         const { error } = await supabaseAdmin.from('audit_logs').delete().eq('id', logId)
         if (error) throw error
-        
+
         revalidatePath('/dashboard/admin/audit')
         return { success: true }
     } catch (error: any) {
@@ -58,7 +57,7 @@ export async function clearAllAuditLogs() {
         // Use a safe delete query (e.g., delete all)
         const { error } = await supabaseAdmin.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000') // Trick to delete all
         if (error) throw error
-        
+
         revalidatePath('/dashboard/admin/audit')
         return { success: true }
     } catch (error: any) {
