@@ -10,15 +10,11 @@ import { updateConsultation } from '@/actions/doctor'
 import { saveHandwrittenNote, getAppointmentHandwrittenNotes } from '@/actions/handwriting'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-<<<<<<< HEAD
 import { HandwritingCanvas } from './HandwritingCanvas'
-import { PenLine, FileText, Clock, Trash2 } from 'lucide-react'
+import { PenLine, FileText, Clock, Trash2, Mic } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-=======
 import { OCRReportUpload } from './OCRReportUpload'
 import { VoiceRecorder } from './VoiceRecorder'
-import { FileText, Mic } from 'lucide-react'
->>>>>>> 6148f50 (made ocr and voice input fields)
 
 interface ConsultationManagerProps {
     isOpen: boolean
@@ -29,17 +25,16 @@ interface ConsultationManagerProps {
 export function ConsultationManager({ isOpen, onClose, appointment }: ConsultationManagerProps) {
     const [loading, setLoading] = useState(false)
     const [notes, setNotes] = useState(appointment?.reason || '') // Pre-fill with existing reason/notes if any
-<<<<<<< HEAD
-    
+
     // Handwriting State
     const [activeInputMode, setActiveInputMode] = useState<'typed' | 'handwritten'>('typed')
     const [handwrittenNoteType, setHandwrittenNoteType] = useState<'prescription' | 'clinical_note' | 'diagram'>('prescription')
     const [existingHandwrittenNotes, setExistingHandwrittenNotes] = useState<any[]>([])
     const [handwritingData, setHandwritingData] = useState<{ imageData: string; strokeData: string } | null>(null)
-=======
+
+    // OCR and Voice State
     const [showOCR, setShowOCR] = useState(false)
     const [showVoice, setShowVoice] = useState(false)
->>>>>>> 6148f50 (made ocr and voice input fields)
 
     // Prescription State
     const [drugName, setDrugName] = useState('')
@@ -47,7 +42,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
     const [frequency, setFrequency] = useState('')
     const [duration, setDuration] = useState('')
     const [instructions, setInstructions] = useState('')
-    
+
     // Load existing handwritten notes for this appointment
     useEffect(() => {
         if (appointment?.id) {
@@ -58,11 +53,11 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
             })
         }
     }, [appointment?.id])
-    
+
     const handleSaveHandwriting = async (data: { imageData: string; strokeData: string }) => {
         setHandwritingData(data)
     }
-    
+
     const handleAutoSaveHandwriting = async (data: { imageData: string; strokeData: string }) => {
         // Auto-save silently in background
         setHandwritingData(data)
@@ -91,7 +86,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                     strokeData: handwritingData.strokeData,
                     title: `${handwrittenNoteType === 'prescription' ? 'Prescription' : handwrittenNoteType === 'clinical_note' ? 'Clinical Note' : 'Diagram'} - ${appointment.patients?.first_name} ${appointment.patients?.last_name}`
                 })
-                
+
                 if (!noteRes.success) {
                     toast.error('Failed to save handwritten note')
                 }
@@ -177,7 +172,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                 </Button>
                             </div>
                         </div>
-                        
+
                         {activeInputMode === 'typed' ? (
                             <>
                                 <div className="space-y-2">
@@ -267,7 +262,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 <HandwritingCanvas
                                     onSave={handleSaveHandwriting}
                                     onAutoSave={handleAutoSaveHandwriting}
@@ -346,7 +341,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
 >>>>>>> 6148f50 (made ocr and voice input fields)
                                 />
-                                
+
                                 {/* Previous Handwritten Notes */}
                                 {existingHandwrittenNotes.length > 0 && (
                                     <div className="border rounded-lg p-3 space-y-2">
@@ -357,8 +352,8 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                         <div className="grid grid-cols-3 gap-2">
                                             {existingHandwrittenNotes.slice(0, 6).map((note: any) => (
                                                 <div key={note.id} className="relative group">
-                                                    <img 
-                                                        src={note.image_data} 
+                                                    <img
+                                                        src={note.image_data}
                                                         alt={note.title}
                                                         className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                                                         onClick={() => window.open(note.image_data, '_blank')}
@@ -372,93 +367,90 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                     </div>
                                 )}
                             </div>
-<<<<<<< HEAD
                         )}
-=======
 
-                            <div className="space-y-4 border rounded-lg p-4">
-                                <h3 className="font-semibold flex items-center gap-2">
-                                    Prescription
-                                    <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
-                                </h3>
+                        <div className="space-y-4 border rounded-lg p-4">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                Prescription
+                                <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                            </h3>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Drug Name</Label>
-                                        <Input
-                                            placeholder="e.g. Amoxicillin"
-                                            value={drugName}
-                                            onChange={(e) => setDrugName(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Dosage</Label>
-                                        <Input
-                                            placeholder="e.g. 500mg"
-                                            value={dosage}
-                                            onChange={(e) => setDosage(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Frequency</Label>
-                                        <Input
-                                            placeholder="e.g. 1-0-1"
-                                            value={frequency}
-                                            onChange={(e) => setFrequency(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Duration</Label>
-                                        <Input
-                                            placeholder="e.g. 5 days"
-                                            value={duration}
-                                            onChange={(e) => setDuration(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Instructions</Label>
+                                    <Label>Drug Name</Label>
                                     <Input
-                                        placeholder="e.g. Take after food"
-                                        value={instructions}
-                                        onChange={(e) => setInstructions(e.target.value)}
+                                        placeholder="e.g. Amoxicillin"
+                                        value={drugName}
+                                        onChange={(e) => setDrugName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Dosage</Label>
+                                    <Input
+                                        placeholder="e.g. 500mg"
+                                        value={dosage}
+                                        onChange={(e) => setDosage(e.target.value)}
                                     />
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Frequency</Label>
+                                    <Input
+                                        placeholder="e.g. 1-0-1"
+                                        value={frequency}
+                                        onChange={(e) => setFrequency(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Duration</Label>
+                                    <Input
+                                        placeholder="e.g. 5 days"
+                                        value={duration}
+                                        onChange={(e) => setDuration(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Instructions</Label>
+                                <Input
+                                    placeholder="e.g. Take after food"
+                                    value={instructions}
+                                    onChange={(e) => setInstructions(e.target.value)}
+                                />
+                            </div>
                         </div>
->>>>>>> 6148f50 (made ocr and voice input fields)
                     </div>
+                </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-                        <Button onClick={handleComplete} disabled={loading}>
-                            {loading ? 'Saving...' : 'Complete Consultation'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
+                    <Button onClick={handleComplete} disabled={loading}>
+                        {loading ? 'Saving...' : 'Complete Consultation'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
-            {/* OCR Modal */}
-            <OCRReportUpload
-                open={showOCR}
-                onClose={() => setShowOCR(false)}
-                patientId={appointment.patients?.id}
-                patientName={patientName}
-                appointmentId={appointment.id}
-            />
+            {/* OCR Modal */ }
+    <OCRReportUpload
+        open={showOCR}
+        onClose={() => setShowOCR(false)}
+        patientId={appointment.patients?.id}
+        patientName={patientName}
+        appointmentId={appointment.id}
+    />
 
-            {/* Voice Recorder Modal */}
-            <VoiceRecorder
-                open={showVoice}
-                onClose={() => setShowVoice(false)}
-                patientId={appointment.patients?.id}
-                patientName={patientName}
-                appointmentId={appointment.id}
-            />
+    {/* Voice Recorder Modal */ }
+    <VoiceRecorder
+        open={showVoice}
+        onClose={() => setShowVoice(false)}
+        patientId={appointment.patients?.id}
+        patientName={patientName}
+        appointmentId={appointment.id}
+    />
         </>
     )
 }
