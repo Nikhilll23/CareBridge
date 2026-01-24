@@ -132,3 +132,21 @@ export async function checkCodingStatus(visitId: string) {
     // If we have a record and icd_code is present, it's coded.
     return !!(data && data.icd_code)
 }
+
+export async function getCodingHistory() {
+    const { data } = await supabaseAdmin
+        .from('medical_records')
+        .select(`
+            *,
+            patients (first_name, last_name)
+        `)
+        .order('updated_at', { ascending: false })
+        .limit(10)
+    
+    return (data || []).map(h => ({
+        ...h,
+        bill_amount: 0, // Placeholder
+        status: h.icd_code ? 'FINALIZED' : 'DRAFT',
+        coded_at: h.updated_at
+    }))
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { searchDiagnosis, searchProcedures, saveCoding, getCodingHistory } from '@/actions/coding'
+import { searchICD10Local, searchProceduresLocal, finalizeDiagnosis, getCodingHistory } from '@/actions/coding'
 import { searchPatients } from '@/actions/patients'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,7 +49,7 @@ export default function CodingDashboard() {
     const handleDiagSearch = async (q: string) => {
         setDiagSearch(q)
         if (q.length > 1) {
-            const res = await searchDiagnosis(q)
+            const res = await searchICD10Local(q)
             setDiagResults(res)
         }
     }
@@ -57,7 +57,7 @@ export default function CodingDashboard() {
     const handleProcSearch = async (q: string) => {
         setProcSearch(q)
         if (q.length > 1) {
-            const res = await searchProcedures(q)
+            const res = await searchProceduresLocal(q)
             setProcResults(res)
         }
     }
@@ -84,12 +84,12 @@ export default function CodingDashboard() {
             return toast.error('Cannot finalize without Diagnosis and Procedures')
         }
 
-        const res = await saveCoding({
+        const res = await finalizeDiagnosis({
+            visitId: 'DUMMY_VISIT_ID', // Needs real visit handling
             patientId: patient.id,
-            diagnosisCodes: selectedDiag.map(d => d.code),
-            procedureCodes: selectedProc.map(p => p.code),
-            status
-        }, 'Current User') // Using placeholder user
+            icdCode: selectedDiag[0]?.code,
+            procedureCode: selectedProc[0]?.code
+        })
 
         if (res.success) {
             toast.success(status === 'FINALIZED' ? 'Coding Finalized & Billed' : 'Draft Saved')
