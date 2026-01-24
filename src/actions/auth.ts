@@ -125,7 +125,7 @@ export async function syncUser(): Promise<UserProfile | null> {
         }
       }
 
-      // Log removed to prevent spam on every page load
+      // Log removed to prevent spam on every page load (syncUser runs on every request)
       // await logAuditAction('USER_LOGIN', 'AUTH', existingUser.id, { email: existingUser.email, role: existingUser.role })
 
       return {
@@ -159,7 +159,7 @@ export async function syncUser(): Promise<UserProfile | null> {
         details: insertError.details,
         hint: insertError.hint
       })
-      
+
       // If it's a duplicate key error, the user already exists
       if (insertError.code === '23505') {
         // Try fetching the existing user by id or email
@@ -168,7 +168,7 @@ export async function syncUser(): Promise<UserProfile | null> {
           .select('*')
           .eq('id', userId)
           .single()
-        
+
         if (existingById) {
           return {
             id: existingById.id,
@@ -180,14 +180,14 @@ export async function syncUser(): Promise<UserProfile | null> {
             createdAt: new Date(existingById.created_at),
           }
         }
-        
+
         // Try by email if id lookup failed
         const { data: existingByEmail } = await supabaseAdmin
           .from('users')
           .select('*')
           .eq('email', email)
           .single()
-        
+
         if (existingByEmail) {
           return {
             id: existingByEmail.id,
@@ -200,7 +200,7 @@ export async function syncUser(): Promise<UserProfile | null> {
           }
         }
       }
-      
+
       throw insertError
     }
 
