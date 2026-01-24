@@ -52,15 +52,15 @@ export function ViewReportDialog({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return 'bg-yellow-500/10 text-yellow-500'
+        return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
       case 'IN_PROGRESS':
-        return 'bg-blue-500/10 text-blue-500'
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
       case 'FINALIZED':
-        return 'bg-green-500/10 text-green-500'
+        return 'bg-green-500/10 text-green-600 dark:text-green-400'
       case 'CANCELLED':
-        return 'bg-red-500/10 text-red-500'
+        return 'bg-red-500/10 text-red-600 dark:text-red-400'
       default:
-        return 'bg-gray-500/10 text-gray-500'
+        return 'bg-muted text-muted-foreground'
     }
   }
 

@@ -7,6 +7,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +56,8 @@ export default function Home() {
           </div>
           <span className="text-xl font-bold tracking-tight">HIS Core</span>
         </div>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link href="/sign-in">
             <Button variant="ghost">Sign In</Button>
           </Link>

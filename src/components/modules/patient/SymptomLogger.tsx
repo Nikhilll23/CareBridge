@@ -57,7 +57,7 @@ export function SymptomLogger() {
                         placeholder="e.g. Headache, Nausea"
                         value={symptom}
                         onChange={(e) => setSymptom(e.target.value)}
-                        className="bg-white/50"
+                        className="bg-background/50"
                     />
                 </div>
 

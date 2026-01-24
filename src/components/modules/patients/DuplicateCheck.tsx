@@ -35,16 +35,16 @@ export function DuplicateCheck({ firstName, lastName, phone, onConfirmed, onUseE
 
     if (match) {
         return (
-            <Card className="border-orange-300 bg-orange-50 mb-4">
+            <Card className="border-orange-300 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800 mb-4">
                 <CardContent className="p-4 flex flex-col gap-3">
                     <div className="flex items-start gap-3">
-                        <AlertCircle className="text-orange-600 h-5 w-5 mt-1" />
+                        <AlertCircle className="text-orange-600 dark:text-orange-400 h-5 w-5 mt-1" />
                         <div>
-                            <h4 className="font-bold text-orange-800">Potential Duplicate Found</h4>
-                            <p className="text-sm text-orange-700">
+                            <h4 className="font-bold text-orange-800 dark:text-orange-300">Potential Duplicate Found</h4>
+                            <p className="text-sm text-orange-700 dark:text-orange-400">
                                 A patient matches these details:
                             </p>
-                            <div className="mt-2 bg-white/50 p-2 rounded text-sm">
+                            <div className="mt-2 bg-background/50 p-2 rounded text-sm">
                                 <strong>{match.first_name} {match.last_name}</strong><br />
                                 <span className="text-xs">UHID: {match.uhid}</span><br />
                                 <span className="text-xs">Phone: {match.contact_number}</span>

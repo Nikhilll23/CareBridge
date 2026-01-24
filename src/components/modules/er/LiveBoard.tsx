@@ -52,21 +52,21 @@ export function LiveBoard() {
             {/* RED COLUMN */}
             <Column
                 title="RED - Critical (Immediate)"
-                color="bg-red-50 border-red-200"
+                color="bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-700"
                 items={categories.RED}
                 onMove={handleMove}
             />
             {/* YELLOW COLUMN */}
             <Column
                 title="YELLOW - Urgent (30m)"
-                color="bg-yellow-50 border-yellow-200"
+                color="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-700"
                 items={categories.YELLOW}
                 onMove={handleMove}
             />
             {/* GREEN COLUMN */}
             <Column
                 title="GREEN - Non-Urgent (2h)"
-                color="bg-green-50 border-green-200"
+                color="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700"
                 items={categories.GREEN}
                 onMove={handleMove}
             />
@@ -79,7 +79,7 @@ function Column({ title, color, items, onMove }: any) {
         <div className={`rounded-xl border p-4 flex flex-col gap-4 ${color}`}>
             <h3 className="font-bold text-lg flex justify-between items-center">
                 {title}
-                <Badge variant="secondary" className="bg-white">{items.length}</Badge>
+                <Badge variant="secondary" className="bg-background">{items.length}</Badge>
             </h3>
             <div className="flex-1 overflow-y-auto space-y-3">
                 {items.map((v: any) => (

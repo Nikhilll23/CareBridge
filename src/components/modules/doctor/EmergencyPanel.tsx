@@ -71,7 +71,7 @@ export function EmergencyPanel({ patientId, doctorId }: EmergencyPanelProps) {
                                 ${loading ? 'opacity-50 cursor-not-allowed' : ''}
                             `}
                         >
-                            <div className="mb-2 p-3 bg-white/50 rounded-full">
+                            <div className="mb-2 p-3 bg-background/50 rounded-full">
                                 {getIcon(p.name)}
                             </div>
                             <span className="font-bold text-lg text-center">{p.name}</span>
