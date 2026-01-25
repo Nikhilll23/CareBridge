@@ -185,20 +185,24 @@ export async function addInventoryItem(data: any) {
     const { error } = await supabaseAdmin.from('pharmacy_inventory').insert({
       drug_name: data.drug_name,
       category: data.category,
-      stock_quantity: data.stock_quantity,
-      unit_price: data.unit_price,
-      batch_number: data.batch_number,
-      expiry_date: data.expiry_date,
-      quantity: data.stock_quantity, // Map stock to quantity for consistency
-      price_per_unit: data.unit_price
+      quantity: data.stock_quantity || 0,
+      price_per_unit: data.unit_price || 0,
+      batch_number: data.batch_number || null,
+      expiry_date: data.expiry_date || null
     })
-    if (error) throw error
+    if (error) {
+      console.error('Insert error:', error)
+      throw error
+    }
     revalidatePath('/dashboard/admin/inventory')
+    revalidatePath('/dashboard/pharmacy')
     return { success: true }
   } catch (e) {
+    console.error('addInventoryItem failed:', e)
     return { success: false, error: 'Failed to add item' }
   }
 }
+
 
 export async function updateInventoryItem(id: string, data: any) {
   try {
