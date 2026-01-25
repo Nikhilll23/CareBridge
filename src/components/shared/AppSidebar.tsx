@@ -206,11 +206,6 @@ export const navigationItems: NavItem[] = [
     icon: FileText,
   },
   {
-    title: 'Audit Logs',
-    href: '/dashboard/admin/audit',
-    icon: FileText,
-  },
-  {
     title: 'Settings',
     href: '/dashboard/settings',
     icon: Settings,
