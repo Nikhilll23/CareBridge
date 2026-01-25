@@ -16,7 +16,9 @@ import {
     ZoomOut,
     Move,
     Highlighter,
-    PenLine
+    PenLine,
+    Maximize2,
+    Minimize2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +45,8 @@ interface HandwritingCanvasProps {
     height?: number
     readOnly?: boolean
     className?: string
+    onMaximize?: () => void
+    onMinimize?: () => void
 }
 
 const COLORS = [
@@ -62,7 +66,9 @@ export function HandwritingCanvas({
     width = 800,
     height = 600,
     readOnly = false,
-    className
+    className,
+    onMaximize,
+    onMinimize
 }: HandwritingCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -220,8 +226,18 @@ export function HandwritingCanvas({
         if (!canvas) return { x: 0, y: 0, pressure: 0.5, timestamp: Date.now() }
         
         const rect = canvas.getBoundingClientRect()
-        const x = (e.clientX - rect.left - offset.x) / scale
-        const y = (e.clientY - rect.top - offset.y) / scale
+        
+        // Calculate the scale factor between displayed size and canvas internal size
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        
+        // Convert client coordinates to canvas coordinates
+        const canvasX = (e.clientX - rect.left) * scaleX
+        const canvasY = (e.clientY - rect.top) * scaleY
+        
+        // Apply pan/zoom offset
+        const x = (canvasX - offset.x) / scale
+        const y = (canvasY - offset.y) / scale
         
         // Get pressure from pointer event (stylus support)
         let pressure = e.pressure
@@ -586,12 +602,28 @@ export function HandwritingCanvas({
                                 Save
                             </Button>
                         )}
+                        
+                        {/* Maximize/Minimize */}
+                        {(onMaximize || onMinimize) && (
+                            <div className="flex items-center gap-1 border-l pl-2 ml-2">
+                                {onMaximize && (
+                                    <Button variant="ghost" size="sm" onClick={onMaximize} title="Fullscreen">
+                                        <Maximize2 className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                {onMinimize && (
+                                    <Button variant="ghost" size="sm" onClick={onMinimize} title="Exit Fullscreen">
+                                        <Minimize2 className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
             
             {/* Canvas Container */}
-            <div className="relative border rounded-lg overflow-hidden bg-white shadow-inner">
+            <div className="relative border rounded-lg overflow-hidden bg-white shadow-inner flex-1 flex items-center justify-center">
                 <canvas
                     ref={canvasRef}
                     width={width}
@@ -603,8 +635,10 @@ export function HandwritingCanvas({
                     )}
                     style={{
                         width: '100%',
-                        height: 'auto',
-                        maxHeight: '60vh'
+                        height: '100%',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain'
                     }}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}

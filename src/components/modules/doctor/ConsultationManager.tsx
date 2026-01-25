@@ -32,6 +32,26 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
     const [existingHandwrittenNotes, setExistingHandwrittenNotes] = useState<any[]>([])
     const [handwritingData, setHandwritingData] = useState<{ imageData: string; strokeData: string } | null>(null)
 
+    const [isFullscreenHandwriting, setIsFullscreenHandwriting] = useState(false)
+    const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const handleResize = () => {
+                setWindowSize({
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                })
+            }
+            
+            // Set initial size
+            handleResize()
+            
+            window.addEventListener('resize', handleResize)
+            return () => window.removeEventListener('resize', handleResize)
+        }
+    }, [])
+
     // OCR and Voice State
     const [showOCR, setShowOCR] = useState(false)
     const [showVoice, setShowVoice] = useState(false)
@@ -61,6 +81,13 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
     const handleAutoSaveHandwriting = async (data: { imageData: string; strokeData: string }) => {
         setHandwritingData(data)
     }
+
+    // Toggle fullscreen and ensure data sync
+    const toggleFullscreenHandwriting = () => {
+        setIsFullscreenHandwriting(!isFullscreenHandwriting)
+    }
+
+
 
     const handleComplete = async () => {
         setLoading(true)
@@ -112,12 +139,12 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+                <DialogContent className="!max-w-[98vw] w-[98vw] !h-[95vh] flex flex-col p-6">
                     <DialogHeader>
                         <DialogTitle>Consultation: {appointment.patients?.first_name} {appointment.patients?.last_name}</DialogTitle>
                     </DialogHeader>
 
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto p-1">
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 overflow-y-auto p-1">
                         {/* Left Side: Patient Info */}
                         <div className="space-y-6">
                             <div className="rounded-lg border p-4 bg-muted/50">
@@ -316,6 +343,9 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                         onAutoSave={handleAutoSaveHandwriting}
                                         width={700}
                                         height={500}
+                                        initialData={handwritingData?.strokeData}
+                                        onMaximize={toggleFullscreenHandwriting}
+                                        className="w-full"
                                     />
                                 </div>
                             )}
@@ -328,6 +358,31 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                             {loading ? 'Saving...' : 'Complete Consultation'}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Fullscreen Handwriting Modal */}
+            <Dialog open={isFullscreenHandwriting} onOpenChange={setIsFullscreenHandwriting}>
+                <DialogContent className="!max-w-[100vw] !w-[100vw] !h-[100vh] p-0 m-0 rounded-none border-none flex flex-col bg-background" showCloseButton={false}>
+                     <div className="p-3 border-b flex items-center justify-between bg-white shrink-0">
+                        <DialogTitle>Fullscreen Note: {handwrittenNoteType.replace('_', ' ')}</DialogTitle>
+                        <div className="flex gap-2">
+                             <Button variant="outline" onClick={() => setIsFullscreenHandwriting(false)}>
+                                Close Fullscreen
+                             </Button>
+                        </div>
+                    </div>
+                    <div className="flex-1 bg-gray-50 overflow-hidden flex flex-col p-2">
+                         <HandwritingCanvas
+                            onSave={handleSaveHandwriting}
+                            onAutoSave={handleAutoSaveHandwriting}
+                            width={windowSize.width > 0 ? windowSize.width - 20 : 1400} 
+                            height={windowSize.height > 0 ? windowSize.height - 140 : 900}
+                            initialData={handwritingData?.strokeData}
+                            onMinimize={toggleFullscreenHandwriting}
+                            className="bg-white shadow-lg flex-1 w-full h-full"
+                        />
+                    </div>
                 </DialogContent>
             </Dialog>
 
