@@ -206,9 +206,25 @@ export const navigationItems: NavItem[] = [
     icon: FileText,
   },
   {
+    title: 'Audit Logs',
+    href: '/dashboard/admin/audit',
+    icon: FileText,
+  },
+  {
     title: 'Settings',
     href: '/dashboard/settings',
     icon: Settings,
+  },
+  // Receptionist Specific Section (Hidden for others via logic)
+  {
+    title: 'Pharmacy Billing',
+    href: '/dashboard/receptionist/pharmacy',
+    icon: Pill,
+  },
+  {
+    title: 'Patient Invoices',
+    href: '/dashboard/receptionist/invoices',
+    icon: Receipt,
   },
 ]
 
@@ -278,12 +294,9 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/nurse/notes',
       '/dashboard/nurse/medications',
       '/dashboard/nurse/care-plans',
-      '/dashboard/nurse/pharmacy', // Pharmacy billing for nurses
-      '/dashboard/nurse/invoices', // Patient invoices
+      // Removed: Pharmacy, Invoices, Appointments
       '/dashboard/nurse/patients',
       '/dashboard/patients',
-      '/dashboard/appointments',
-      '/dashboard/pharmacy',
       '/dashboard/beds',
       '/dashboard/lab'
     ].includes(item.href)
@@ -294,17 +307,35 @@ const shouldShowItem = (item: NavItem, role?: string) => {
     return [
       '/dashboard/receptionist',
       '/dashboard/receptionist/appointments',
-      '/dashboard/receptionist/billing',
+      '/dashboard/receptionist/billing', // General Billing
+      '/dashboard/receptionist/pharmacy', // Added: Pharmacy Billing
+      '/dashboard/receptionist/invoices', // Added: Patient Invoices
       '/dashboard/receptionist/payments',
       '/dashboard/patients',
       '/dashboard/appointments'
     ].includes(item.href)
   }
 
-  // Default fallback for Admin (sees everything except AI Assistant)
+  // Default fallback for Admin (sees everything except AI Assistant and specific role dashboards)
   if (userRole === 'ADMIN') {
     // Admins don't need AI Assistant - it's for doctors and patients
     if (item.href === '/dashboard/ai') return false
+
+    // Hide Referrals (User requested removal)
+    if (item.href.includes('referrals')) return false
+
+    // Hide Nursing Modules (User requested removal)
+    if (item.href.startsWith('/dashboard/nurse/')) return false
+
+    // Hide Diagnostic Lab (User requested removal)
+    if (item.href === '/dashboard/lab') return false
+
+    // Hide Patient Billing/Payments (User requested removal)
+    if (item.title === 'Billing & Payments') return false
+
+    // Hide Radiology (User requested removal)
+    if (item.href === '/dashboard/radiology') return false
+
     return true
   }
 
