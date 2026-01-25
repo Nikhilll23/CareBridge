@@ -349,6 +349,9 @@ export const shouldShowItem = (item: NavItem, role?: string) => {
     // Hide Radiology (User requested removal)
     if (item.href === '/dashboard/radiology') return false
 
+    // Hide Medical Reports (User requested removal)
+    if (item.href === '/dashboard/patient/reports') return false
+
     return true
   }
 
