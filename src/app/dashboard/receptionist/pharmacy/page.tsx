@@ -4,8 +4,8 @@ import { NursePharmacyClient } from '@/components/modules/nurse/NursePharmacyCli
 export default function ReceptionistPharmacyPage() {
     return (
         <div className="p-6">
-            <Suspense fallback={<div>Loading...</div>}>
-                <NursePharmacyClient />
+            <Suspense fallback={<div>Loading Pharmacy...</div>}>
+                <NursePharmacyClient role="receptionist" />
             </Suspense>
         </div>
     )

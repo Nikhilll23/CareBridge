@@ -30,7 +30,8 @@ import {
   Wrench,
   Heart,
   Stethoscope,
-  ClipboardList
+  ClipboardList,
+  ShoppingCart
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -127,6 +128,11 @@ export const navigationItems: NavItem[] = [
     icon: Pill,
   },
   {
+    title: 'Cart',
+    href: '/dashboard/nurse/cart',
+    icon: ShoppingCart,
+  },
+  {
     title: 'Patient Invoices',
     href: '/dashboard/nurse/invoices',
     icon: Receipt,
@@ -217,14 +223,24 @@ export const navigationItems: NavItem[] = [
     icon: Pill,
   },
   {
+    title: 'Cart',
+    href: '/dashboard/receptionist/cart',
+    icon: ShoppingCart,
+  },
+  {
     title: 'Patient Invoices',
     href: '/dashboard/receptionist/invoices',
     icon: Receipt,
   },
+  {
+    title: 'My Cart',
+    href: '/dashboard/patient/cart',
+    icon: ShoppingCart,
+  },
 ]
 
 // Helper to determine if an item should be shown for a role
-const shouldShowItem = (item: NavItem, role?: string) => {
+export const shouldShowItem = (item: NavItem, role?: string) => {
   // Define visibility rules
   const userRole = role?.toUpperCase() || 'PATIENT' // Default to safest role
 
@@ -278,7 +294,8 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/patient/reports', // Patients can see their reports
       '/dashboard/beds',
       '/dashboard/ot',
-      '/dashboard/patient/referrals' // Added referrals
+      '/dashboard/patient/referrals', // Added referrals
+      '/dashboard/patient/cart' // Added My Cart
     ].includes(item.href)
   }
 
@@ -304,6 +321,7 @@ const shouldShowItem = (item: NavItem, role?: string) => {
       '/dashboard/receptionist/appointments',
       '/dashboard/receptionist/billing', // General Billing
       '/dashboard/receptionist/pharmacy', // Added: Pharmacy Billing
+      // '/dashboard/receptionist/cart', // Removed: Cart (Now Patient only)
       '/dashboard/receptionist/invoices', // Added: Patient Invoices
       '/dashboard/receptionist/payments',
       '/dashboard/patients',

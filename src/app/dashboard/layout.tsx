@@ -4,6 +4,7 @@ import { syncUser } from '@/actions/auth'
 import { AppSidebar } from '@/components/shared/AppSidebar'
 import { GlobalAI } from '@/components/shared/GlobalAI'
 import { Header } from '@/components/shared/Header'
+import { CartProvider } from '@/context/CartContext'
 
 export default async function DashboardLayout({
   children,
@@ -46,9 +47,11 @@ export default async function DashboardLayout({
         />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-background p-3 md:p-6 lg:p-8">
-          {children}
-        </main>
+        <CartProvider>
+          <main className="flex-1 overflow-y-auto bg-background p-3 md:p-6 lg:p-8">
+            {children}
+          </main>
+        </CartProvider>
       </div>
     </div>
   )

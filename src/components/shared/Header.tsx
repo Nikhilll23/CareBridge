@@ -9,7 +9,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { NotificationPanel } from '@/components/shared/NotificationPanel'
 import type { UserRole } from '@/types'
 import { cn } from '@/lib/utils'
-import { navigationItems } from './AppSidebar'
+import { navigationItems, shouldShowItem } from './AppSidebar'
 
 
 interface HeaderProps {
@@ -69,7 +69,7 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
               </div>
               <div className="flex-1 overflow-auto py-2">
                 <nav className="grid gap-1 px-2">
-                  {navigationItems.map((item, index) => {
+                  {navigationItems.filter(item => shouldShowItem(item, userRole)).map((item, index) => {
                     const Icon = item.icon
                     return (
                       <a

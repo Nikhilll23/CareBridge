@@ -132,3 +132,62 @@ export async function getInventory(drugName?: string) {
     const { data } = await query
     return data || []
 }
+
+export async function addToPatientCart(data: {
+    patientId: string
+    medicineId: string
+    medicineName: string
+    price: number
+    quantity: number
+}) {
+    try {
+        const { error } = await supabaseAdmin
+            .from('pharmacy_cart_items')
+            .insert({
+                patient_id: data.patientId,
+                medicine_id: data.medicineId,
+                medicine_name: data.medicineName,
+                price: data.price,
+                quantity: data.quantity,
+                status: 'PENDING'
+            })
+
+        if (error) {
+            console.error('Add to cart error:', error)
+            return { success: false, error: 'Failed to add to cart' }
+        }
+
+        revalidatePath('/dashboard/patient/cart')
+        return { success: true }
+    } catch (error) {
+        return { success: false, error: 'System error' }
+    }
+}
+
+export async function getPatientCartItems(patientId: string) {
+    const { data } = await supabaseAdmin
+        .from('pharmacy_cart_items')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('status', 'PENDING')
+
+    return data || []
+}
+
+export async function markCartAsPaid(patientId: string) {
+    try {
+        const { error } = await supabaseAdmin
+            .from('pharmacy_cart_items')
+            .update({ status: 'PAID', updated_at: new Date().toISOString() })
+            .eq('patient_id', patientId)
+            .eq('status', 'PENDING')
+
+        if (error) throw error
+
+        revalidatePath('/dashboard/patient/cart')
+        return { success: true }
+    } catch (error) {
+        console.error('Payment Update Error:', error)
+        return { success: false, error: 'Failed to update payment status' }
+    }
+}

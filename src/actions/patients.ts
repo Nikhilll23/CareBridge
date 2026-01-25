@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { createMetriportPatient } from '@/lib/metriport'
 import type { PatientFormValues, Patient } from '@/types'
 import { logAuditAction } from './audit'
@@ -887,23 +888,28 @@ export async function registerEmergencyPatient(gender: 'Male' | 'Female' | 'Othe
  * Search patients by name or UHID
  */
 export async function searchPatients(query: string) {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('patients')
-      .select('id, first_name, last_name, uhid')
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,uhid.ilike.%${query}%`)
-      .limit(10)
+  if (!query || query.length < 2) return []
 
-    if (error) {
-      console.error('Error searching patients:', error)
-      return []
-    }
+  const supabase = await createClient()
 
-    return data || []
-  } catch (error) {
-    console.error('Error in searchPatients:', error)
+  // Search by name (first/last), UHID, or Phone
+  const { data, error } = await supabase
+    .from('patients')
+    .select('id, first_name, last_name, uhid, contact_number')
+    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,uhid.ilike.%${query}%,contact_number.ilike.%${query}%`)
+    .limit(5)
+
+  if (error) {
+    console.error('Error searching patients:', error)
     return []
   }
+
+  return data.map((p: any) => ({
+    id: p.id,
+    name: `${p.first_name} ${p.last_name}`,
+    uhid: p.uhid,
+    phone: p.contact_number
+  }))
 }
 
 
@@ -971,3 +977,4 @@ export async function mergePatients(primaryId: string, secondaryId: string) {
     return { success: false, error: 'Failed to merge records' }
   }
 }
+
