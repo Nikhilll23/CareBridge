@@ -3,19 +3,23 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { NurseDashboardClient } from '@/components/modules/nurse/NurseDashboardClient'
 
-export default async function NurseDashboardPage() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+import { auth } from '@clerk/nextjs/server'
 
-    if (!user) {
-        redirect('/auth/signin')
+export default async function NurseDashboardPage() {
+    const { userId } = await auth()
+
+    if (!userId) {
+        redirect('/sign-in')
     }
 
-    // Check if user is a nurse
+    const supabase = await createClient()
+
+    // Check if user is a nurse using Clerk ID
+    // Assuming the 'users' table id matches the Clerk userId (which middleware ensures)
     const { data: userData } = await supabase
         .from('users')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single()
 
     if (userData?.role !== 'NURSE') {

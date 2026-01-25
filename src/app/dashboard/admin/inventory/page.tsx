@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Package, AlertOctagon, Truck, ClipboardList, Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { getInventory as getStock } from '@/actions/pharmacy' // Reuse stock fetch
 
 export default function InventoryDashboard() {
     const [stock, setStock] = useState<any[]>([])
@@ -32,7 +31,10 @@ export default function InventoryDashboard() {
     const [grnData, setGrnData] = useState({ batch: '', expiry: '', qty: 0, price: 0 })
 
     const refresh = () => {
-        getStock().then(setStock)
+        getInventory().then(data => {
+            console.log('Frontend Stock Data:', data)
+            setStock(data)
+        })
         getPurchaseOrders().then(setPOs)
         getVendors().then(setVendors)
     }
@@ -66,10 +68,14 @@ export default function InventoryDashboard() {
     }
 
     const handleAddItem = async () => {
-        await addInventoryItem(newItem)
-        setIsAddOpen(false)
-        toast.success('Item Added to Inventory')
-        refresh()
+        const result = await addInventoryItem(newItem)
+        if (result.success) {
+            setIsAddOpen(false)
+            toast.success('Item Added to Inventory')
+            refresh()
+        } else {
+            toast.error(result.error || 'Failed to add item')
+        }
     }
 
     return (
@@ -94,7 +100,7 @@ export default function InventoryDashboard() {
                         <Card>
                             <CardHeader className="pb-2"><CardTitle className="text-sm">Low Stock Alerts</CardTitle></CardHeader>
                             <CardContent className="text-2xl font-bold text-red-600">
-                                {stock.filter(s => s.quantity < 20).length}
+                                {stock.filter(s => s.quantity <= (s.low_stock_threshold || 20)).length}
                             </CardContent>
                         </Card>
                     </div>
@@ -155,7 +161,7 @@ export default function InventoryDashboard() {
                                             <TableCell>{item.expiry_date}</TableCell>
                                             <TableCell>{item.quantity}</TableCell>
                                             <TableCell>
-                                                {item.quantity < 20 ? (
+                                                {item.quantity <= (item.low_stock_threshold || 20) ? (
                                                     <Badge variant="destructive" className="flex w-fit items-center gap-1">
                                                         <AlertOctagon className="h-3 w-3" /> Low Stock
                                                     </Badge>

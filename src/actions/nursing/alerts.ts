@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+import { auth } from '@clerk/nextjs/server'
+
 export interface AlertData {
     patientId: string
     alertType: 'vital_signs' | 'medication' | 'lab_result' | 'general'
@@ -59,7 +61,6 @@ export async function getActiveAlerts() {
     }
 }
 
-import { auth } from '@clerk/nextjs/server'
 
 // ... existing imports
 

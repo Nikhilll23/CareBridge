@@ -131,30 +131,30 @@ export function NurseDashboardClient() {
                     <CardDescription>Common nursing tasks</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Link href="/dashboard/nurse/vital-signs">
-                        <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
+                    <Button variant="outline" className="w-full h-20 flex flex-col gap-2" asChild>
+                        <Link href="/dashboard/nurse/vital-signs">
                             <Activity className="h-6 w-6" />
                             <span>Record Vitals</span>
-                        </Button>
-                    </Link>
-                    <Link href="/dashboard/nurse/medications">
-                        <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
+                        </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full h-20 flex flex-col gap-2" asChild>
+                        <Link href="/dashboard/nurse/medications">
                             <Pill className="h-6 w-6" />
                             <span>MAR</span>
-                        </Button>
-                    </Link>
-                    <Link href="/dashboard/nurse/notes">
-                        <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
+                        </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full h-20 flex flex-col gap-2" asChild>
+                        <Link href="/dashboard/nurse/notes">
                             <FileText className="h-6 w-6" />
                             <span>Nursing Notes</span>
-                        </Button>
-                    </Link>
-                    <Link href="/dashboard/nurse/patients">
-                        <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
+                        </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full h-20 flex flex-col gap-2" asChild>
+                        <Link href="/dashboard/nurse/patients">
                             <Users className="h-6 w-6" />
                             <span>Patients</span>
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </CardContent>
             </Card>
 
@@ -216,11 +216,11 @@ export function NurseDashboardClient() {
                         <CardDescription>Patients with abnormal vital signs</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Link href="/dashboard/nurse/vital-signs">
-                            <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full" asChild>
+                            <Link href="/dashboard/nurse/vital-signs">
                                 View Critical Vitals
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     </CardContent>
                 </Card>
             )}

@@ -21,14 +21,18 @@ export interface InventoryItem {
 }
 
 export async function getInventory() {
-  const { data } = await supabaseAdmin.from('pharmacy_inventory').select('*').order('drug_name')
+  const { data, error } = await supabaseAdmin.from('pharmacy_inventory').select('*').order('drug_name')
+
+  if (error) console.error('getInventory Error:', error)
+  console.log('getInventory Data:', data?.length)
+
   // Map fields for consistency
   return (data || []).map(d => ({
     ...d,
     item_name: d.drug_name,
-    stock_quantity: d.quantity,
+    stock_quantity: d.quantity, // Prioritize quantity column as main stock
     unit_price: d.price_per_unit,
-    low_stock_threshold: 20 // Default
+    low_stock_threshold: d.low_stock_threshold || 20
   }))
 }
 
@@ -168,6 +172,7 @@ export async function returnStock(batchId: string, qty: number, reason: string) 
   revalidatePath('/dashboard/admin/inventory')
   return { success: true }
 }
+
 export async function deleteInventoryItem(id: string) {
   try {
     const { error } = await supabaseAdmin.from('pharmacy_inventory').delete().eq('id', id)
@@ -182,27 +187,37 @@ export async function deleteInventoryItem(id: string) {
 
 export async function addInventoryItem(data: any) {
   try {
+    console.log('Adding Item:', data)
+
+    // Check required fields
+    if (!data.drug_name || !data.stock_quantity) {
+      throw new Error('Missing required fields')
+    }
+
     const { error } = await supabaseAdmin.from('pharmacy_inventory').insert({
       drug_name: data.drug_name,
-      category: data.category,
-      quantity: data.stock_quantity || 0,
-      price_per_unit: data.unit_price || 0,
-      batch_number: data.batch_number || null,
-      expiry_date: data.expiry_date || null
+      category: data.category || 'GENERAL',
+      stock_quantity: data.stock_quantity,
+      // unit_price column does not exist, mapping to price_per_unit
+      batch_number: data.batch_number,
+      expiry_date: data.expiry_date,
+      quantity: data.stock_quantity, // Keep both synced as per schema presence
+      price_per_unit: data.unit_price || 0
     })
+
     if (error) {
-      console.error('Insert error:', error)
+      console.error('Supabase Insert Error:', error)
       throw error
     }
+
     revalidatePath('/dashboard/admin/inventory')
     revalidatePath('/dashboard/pharmacy')
     return { success: true }
-  } catch (e) {
-    console.error('addInventoryItem failed:', e)
-    return { success: false, error: 'Failed to add item' }
+  } catch (e: any) {
+    console.error('addInventoryItem Exception:', e)
+    return { success: false, error: e.message || 'Failed to add item' }
   }
 }
-
 
 export async function updateInventoryItem(id: string, data: any) {
   try {

@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+import { auth } from '@clerk/nextjs/server'
+
 export interface MedicationData {
     patientId: string
     medicationName: string
@@ -11,8 +13,6 @@ export interface MedicationData {
     scheduledTime: string
     notes?: string
 }
-
-import { auth } from '@clerk/nextjs/server'
 
 export async function scheduleMedication(data: MedicationData) {
     try {
