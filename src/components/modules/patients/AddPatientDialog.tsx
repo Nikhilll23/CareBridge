@@ -113,7 +113,7 @@ export function AddPatientDialog({ children }: AddPatientDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-150">
+      <DialogContent className="sm:max-w-150 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Register New Patient</DialogTitle>
           <DialogDescription>
