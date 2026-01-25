@@ -3,21 +3,76 @@
 import { HeroHeader } from "@/components/hero-section-5"
 import { Footer } from "@/components/footer-section"
 import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
+import { createPaymentOrder } from '@/actions/billing'
+import { toast } from 'sonner'
+import Script from 'next/script'
+import { useState } from 'react'
+
+declare global {
+    interface Window {
+        Razorpay: any
+    }
+}
 
 export default function PricingPage() {
-    const handlePayment = (amount: number) => {
-        // In a real app, this would call your backend to create an order
-        // For this demo, we'll redirect to a payment link simulation or the Razorpay homepage with params
-        const razorpayUrl = `https://razorpay.com/payment-link/pl_mock?amount=${amount * 100}` // Amount in paise
-        window.location.href = razorpayUrl
-        // reliable way to "redirect with amount" without a real account is tricky, 
-        // but user asked to "redirect to razorpay". 
-        // We will stick to the literal request.
+    const [loading, setLoading] = useState(false)
+
+    const handlePayment = async (amount: number, planName: string) => {
+        setLoading(true)
+        try {
+            // For pricing page (public), we might not have a patientId logged in. 
+            // We'll use a generic placeholder ID or try to get current user if possible.
+            // In a real SaaS flow, this would be a "subscribe" action, not a "patient bill".
+            // But for this project requirement, we will reuse the existing billing infrastructure.
+            const demoPatientId = 'guest_user_pricing'
+
+            // 1. Create Order
+            const res = await createPaymentOrder(demoPatientId, amount, `Subscription: ${planName}`)
+
+            if (!res.success || !res.orderId) {
+                toast.error('Payment Initialization Failed', { description: res.error || 'Check server logs' })
+                setLoading(false)
+                return
+            }
+
+            // 2. Open Razorpay
+            const options = {
+                key: res.keyId,
+                amount: res.amount,
+                currency: res.currency,
+                name: 'HIS Core Hospital',
+                description: `Subscription: ${planName}`,
+                order_id: res.orderId,
+                handler: function (response: any) {
+                    toast.success('Payment Successful', { description: `Ref: ${response.razorpay_payment_id}` })
+                },
+                theme: { color: '#3399cc' },
+                modal: {
+                    ondismiss: function () {
+                        toast.info('Payment Cancelled')
+                        setLoading(false)
+                    }
+                }
+            }
+
+            const rzp1 = new window.Razorpay(options)
+            rzp1.on('payment.failed', function (response: any) {
+                toast.error('Payment Failed', { description: response.error.description })
+            })
+            rzp1.open()
+
+        } catch (error) {
+            console.error(error)
+            toast.error('Something went wrong')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
         <>
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             <HeroHeader />
             <main className="pt-32 min-h-screen container mx-auto px-6">
                 <div className="max-w-5xl mx-auto text-center">
@@ -39,7 +94,8 @@ export default function PricingPage() {
                                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Basic EMR</li>
                                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Appointment Scheduling</li>
                             </ul>
-                            <Button variant="outline" className="w-full" onClick={() => handlePayment(208)}>
+                            <Button variant="outline" className="w-full" onClick={() => handlePayment(208, 'Starter')}>
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Get Started (₹208)
                             </Button>
                         </div>
@@ -58,7 +114,8 @@ export default function PricingPage() {
                                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Inpatient Management</li>
                                 <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Pharmacy Module</li>
                             </ul>
-                            <Button className="w-full" onClick={() => handlePayment(459)}>
+                            <Button className="w-full" onClick={() => handlePayment(459, 'Growth')}>
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Start Free Trial (₹459)
                             </Button>
                         </div>

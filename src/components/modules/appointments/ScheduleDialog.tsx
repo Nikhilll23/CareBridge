@@ -25,7 +25,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { createAppointment } from '@/actions/appointments'
+import { mapSymptomToSpecialization } from '@/actions/ai'
 import { toast } from 'sonner'
+import { Loader2, Sparkles, Search } from 'lucide-react'
+import { useDebounce } from '@/hooks/use-debounce'
 
 interface Patient {
   id: string
@@ -70,8 +73,41 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     doctorId: '',
     time: '',
     reason: '',
+    reason: '',
     notes: '',
   })
+
+  // AI Symptom Search State
+  const [symptomQuery, setSymptomQuery] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  const debouncedSymptom = useDebounce(symptomQuery, 1000) // 1 second debounce
+
+  // Auto-map symptom to specialization
+  useEffect(() => {
+    const analyzeSymptom = async () => {
+      if (!debouncedSymptom || debouncedSymptom.length < 3) return
+
+      setIsAnalyzing(true)
+      try {
+        const result = await mapSymptomToSpecialization(debouncedSymptom, SPECIALIZATIONS)
+
+        if (result.success && result.specialization) {
+          setSelectedSpecialization(result.specialization)
+          setFormData(prev => ({ ...prev, doctorId: '' })) // Reset doctor
+          toast.success(`Auto-mapped to ${result.specialization}`, {
+            icon: <Sparkles className="h-4 w-4 text-yellow-500" />
+          })
+        }
+      } catch (error) {
+        console.error('Failed to map symptom', error)
+      } finally {
+        setIsAnalyzing(false)
+      }
+    }
+
+    analyzeSymptom()
+  }, [debouncedSymptom])
 
   // Filter doctors based on selection
   const filteredDoctors = useMemo(() => {
@@ -175,6 +211,30 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* AI Symptom Search */}
+          <div className="space-y-2">
+            <Label htmlFor="symptom-search" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-purple-500" />
+              AI Symptom Matcher
+              <span className="text-xs font-normal text-muted-foreground">(Type a condition to auto-select specialist)</span>
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="symptom-search"
+                placeholder="e.g. chest pain, skin rash, blurry vision..."
+                className="pl-9 pr-9"
+                value={symptomQuery}
+                onChange={(e) => setSymptomQuery(e.target.value)}
+              />
+              {isAnalyzing && (
+                <div className="absolute right-3 top-2.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Specialization Filter */}

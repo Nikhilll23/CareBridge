@@ -237,3 +237,38 @@ export async function getPatientListForSelector() {
     return { success: false, patients: [] }
   }
 }
+
+/**
+ * AI Automapping: Map symptom to specialization
+ */
+import { analyzeSymptomToSpecialization } from '@/lib/groq'
+
+export async function mapSymptomToSpecialization(
+  symptom: string,
+  specializations: string[]
+): Promise<{ success: boolean; specialization?: string; error?: string }> {
+  try {
+    const user = await currentUser()
+    if (!user) return { success: false, error: 'Unauthorized' }
+
+    const response = await analyzeSymptomToSpecialization(symptom, specializations)
+
+    if (response.success && response.message) {
+      // Clean up the response to ensure it matches strictly
+      const mappedSpec = response.message.trim()
+
+      // Verify if it exists in the list (fuzzy match could be added here if needed, but we asked for strict)
+      const exactMatch = specializations.find(s => s.toLowerCase() === mappedSpec.toLowerCase())
+
+      return {
+        success: true,
+        specialization: exactMatch || 'General Physician'
+      }
+    }
+
+    return { success: false, error: response.error || 'Failed to map symptom' }
+  } catch (error: any) {
+    console.error('Error in mapSymptomToSpecialization:', error)
+    return { success: false, error: error.message }
+  }
+}

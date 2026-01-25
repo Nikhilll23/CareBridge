@@ -222,3 +222,30 @@ ${admissionData.procedures ? `**PROCEDURES:** ${admissionData.procedures}` : ''}
     'Generate a professional discharge summary in standard medical format. Include admission diagnosis, hospital course, discharge condition, medications, and follow-up instructions.'
   )
 }
+
+/**
+ * Analyze symptom to determine specialization
+ */
+export async function analyzeSymptomToSpecialization(
+  symptom: string,
+  validSpecializations: string[]
+): Promise<AIResponse> {
+  const context = `
+Valid Specializations:
+${validSpecializations.join(', ')}
+
+Symptom/Condition:
+${symptom}
+`
+
+  return analyzeMedicalData(
+    context,
+    `Based on the symptom or condition "${symptom}", identify the SINGLE most appropriate specialization from the provided list.
+    
+Rules:
+1. Return ONLY the exact name of the specialization from the list.
+2. If it's general or unclear, return "General Physician".
+3. Do not add any explanation or punctuation.
+4. If multiple fit, choose the most specific one.`
+  )
+}
