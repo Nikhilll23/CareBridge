@@ -12,21 +12,26 @@ export interface NursingNoteData {
     isCritical?: boolean
 }
 
+import { auth } from '@clerk/nextjs/server'
+
+// ... existing imports
+
 export async function createNursingNote(data: NursingNoteData) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
 
-        if (!user) {
+        if (!userId) {
             return { success: false, error: 'Not authenticated' }
         }
+
+        const supabase = await createClient()
 
         const { data: note, error } = await supabase
             .from('nursing_notes')
             .insert({
                 patient_id: data.patientId,
                 appointment_id: data.appointmentId,
-                nurse_id: user.id,
+                nurse_id: userId,
                 note_type: data.noteType,
                 title: data.title,
                 content: data.content,
@@ -58,7 +63,7 @@ export async function createNursingNote(data: NursingNoteData) {
 
 export async function getPatientNotes(patientId: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('nursing_notes')
@@ -80,12 +85,10 @@ export async function getPatientNotes(patientId: string) {
 
 export async function updateNursingNote(id: string, data: Partial<NursingNoteData>) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
 
-        if (!user) {
-            return { success: false, error: 'Not authenticated' }
-        }
+        const supabase = await createClient()
 
         const { data: note, error } = await supabase
             .from('nursing_notes')
@@ -97,7 +100,7 @@ export async function updateNursingNote(id: string, data: Partial<NursingNoteDat
                 updated_at: new Date().toISOString()
             })
             .eq('id', id)
-            .eq('nurse_id', user.id) // Only allow updating own notes
+            .eq('nurse_id', userId) // Only allow updating own notes
             .select()
             .single()
 
@@ -113,18 +116,16 @@ export async function updateNursingNote(id: string, data: Partial<NursingNoteDat
 
 export async function deleteNursingNote(id: string) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
 
-        if (!user) {
-            return { success: false, error: 'Not authenticated' }
-        }
+        const supabase = await createClient()
 
         const { error } = await supabase
             .from('nursing_notes')
             .delete()
             .eq('id', id)
-            .eq('nurse_id', user.id) // Only allow deleting own notes
+            .eq('nurse_id', userId) // Only allow deleting own notes
 
         if (error) throw error
 
@@ -138,7 +139,7 @@ export async function deleteNursingNote(id: string) {
 
 export async function getRecentNotes(limit: number = 10) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('nursing_notes')

@@ -13,21 +13,26 @@ export interface ShiftHandoverData {
     pendingTasks?: string
 }
 
+import { auth } from '@clerk/nextjs/server'
+
+// ... existing imports
+
 export async function createShiftHandover(data: ShiftHandoverData) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
 
-        if (!user) {
+        if (!userId) {
             return { success: false, error: 'Not authenticated' }
         }
+
+        const supabase = await createClient()
 
         const { data: handover, error } = await supabase
             .from('shift_handovers')
             .insert({
                 shift_date: data.shiftDate,
                 shift_type: data.shiftType,
-                outgoing_nurse: user.id,
+                outgoing_nurse: userId,
                 incoming_nurse: data.incomingNurse,
                 patient_id: data.patientId,
                 summary: data.summary,
@@ -49,7 +54,7 @@ export async function createShiftHandover(data: ShiftHandoverData) {
 
 export async function getShiftHandovers(date: string, shift?: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         let query = supabase
             .from('shift_handovers')
@@ -78,7 +83,7 @@ export async function getShiftHandovers(date: string, shift?: string) {
 
 export async function getPatientHandoverHistory(patientId: string, limit: number = 10) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('shift_handovers')
@@ -103,7 +108,7 @@ export async function getPatientHandoverHistory(patientId: string, limit: number
 
 export async function getTodaysHandovers() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const today = new Date().toISOString().split('T')[0]
 
         const { data, error } = await supabase

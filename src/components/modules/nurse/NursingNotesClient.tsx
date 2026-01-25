@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { createClient } from '@/lib/supabase/client'
 import { Plus, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { NursingNotesEditor } from './NursingNotesEditor'
 
 export function NursingNotesClient() {
     const [notes, setNotes] = useState<any[]>([])
@@ -53,6 +54,8 @@ export function NursingNotesClient() {
         return <Badge variant={variants[type] || 'secondary'}>{type}</Badge>
     }
 
+    const [showEditor, setShowEditor] = useState(false)
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -60,7 +63,7 @@ export function NursingNotesClient() {
                     <h1 className="text-3xl font-bold">Nursing Notes</h1>
                     <p className="text-muted-foreground">Patient care documentation</p>
                 </div>
-                <Button>
+                <Button onClick={() => setShowEditor(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Note
                 </Button>
@@ -81,7 +84,7 @@ export function NursingNotesClient() {
                         <div className="text-center py-8 text-muted-foreground">
                             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                             <p>No nursing notes found</p>
-                            <Button variant="outline" className="mt-4">
+                            <Button variant="outline" className="mt-4" onClick={() => setShowEditor(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Create First Note
                             </Button>
@@ -132,6 +135,19 @@ export function NursingNotesClient() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Editor Modal */}
+            {/* Note: In a real app we'd select a patient first. For now, assuming context or generic. */}
+            {showEditor && (
+                <NursingNotesEditor
+                    open={showEditor}
+                    onClose={() => setShowEditor(false)}
+                    patientId="" // TODO: Needs patient selection logic
+                    patientName="Select Patient" // Placeholder
+                    onSuccess={loadNotes}
+                />
+            )}
         </div>
     )
 }
+

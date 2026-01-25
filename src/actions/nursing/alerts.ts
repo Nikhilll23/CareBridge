@@ -12,7 +12,7 @@ export interface AlertData {
 
 export async function createAlert(data: AlertData) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data: alert, error } = await supabase
             .from('nursing_alerts')
@@ -38,7 +38,7 @@ export async function createAlert(data: AlertData) {
 
 export async function getActiveAlerts() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('nursing_alerts')
@@ -59,20 +59,22 @@ export async function getActiveAlerts() {
     }
 }
 
+import { auth } from '@clerk/nextjs/server'
+
+// ... existing imports
+
 export async function acknowledgeAlert(id: string) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
 
-        if (!user) {
-            return { success: false, error: 'Not authenticated' }
-        }
+        const supabase = await createClient()
 
         const { data: alert, error } = await supabase
             .from('nursing_alerts')
             .update({
                 is_acknowledged: true,
-                acknowledged_by: user.id,
+                acknowledged_by: userId,
                 acknowledged_at: new Date().toISOString()
             })
             .eq('id', id)
@@ -91,7 +93,7 @@ export async function acknowledgeAlert(id: string) {
 
 export async function getPatientAlerts(patientId: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('nursing_alerts')
@@ -114,7 +116,7 @@ export async function getPatientAlerts(patientId: string) {
 
 export async function getCriticalAlerts() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('nursing_alerts')
@@ -137,7 +139,7 @@ export async function getCriticalAlerts() {
 
 export async function getAlertStats() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         // Get counts by severity
         const { data: stats, error } = await supabase

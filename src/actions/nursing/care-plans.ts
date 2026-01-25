@@ -12,20 +12,25 @@ export interface CarePlanData {
     endDate?: string
 }
 
+import { auth } from '@clerk/nextjs/server'
+
+// ... existing imports
+
 export async function createCarePlan(data: CarePlanData) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
 
-        if (!user) {
+        if (!userId) {
             return { success: false, error: 'Not authenticated' }
         }
+
+        const supabase = await createClient()
 
         const { data: carePlan, error } = await supabase
             .from('care_plans')
             .insert({
                 patient_id: data.patientId,
-                created_by: user.id,
+                created_by: userId,
                 diagnosis: data.diagnosis,
                 goals: data.goals,
                 interventions: data.interventions,
@@ -48,7 +53,7 @@ export async function createCarePlan(data: CarePlanData) {
 
 export async function getPatientCarePlans(patientId: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('care_plans')
@@ -70,7 +75,7 @@ export async function getPatientCarePlans(patientId: string) {
 
 export async function updateCarePlan(id: string, data: Partial<CarePlanData>) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data: carePlan, error } = await supabase
             .from('care_plans')
@@ -97,7 +102,7 @@ export async function updateCarePlan(id: string, data: Partial<CarePlanData>) {
 
 export async function discontinueCarePlan(id: string, reason: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data: carePlan, error } = await supabase
             .from('care_plans')
@@ -123,7 +128,7 @@ export async function discontinueCarePlan(id: string, reason: string) {
 
 export async function completeCarePlan(id: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data: carePlan, error } = await supabase
             .from('care_plans')
@@ -148,7 +153,7 @@ export async function completeCarePlan(id: string) {
 
 export async function getActiveCarePlans() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('care_plans')

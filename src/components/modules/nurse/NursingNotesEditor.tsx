@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { createNursingNote, NursingNoteData } from '@/actions/nursing/nursing-notes'
+import { generateNursingNoteDraft } from '@/actions/nursing/ai-draft'
 import { toast } from 'sonner'
-import { FileText } from 'lucide-react'
+import { FileText, Sparkles, Loader2 } from 'lucide-react'
 
 interface NursingNotesEditorProps {
     open: boolean
@@ -23,12 +24,36 @@ interface NursingNotesEditorProps {
 
 export function NursingNotesEditor({ open, onClose, patientId, patientName, appointmentId, onSuccess }: NursingNotesEditorProps) {
     const [loading, setLoading] = useState(false)
+    const [drafting, setDrafting] = useState(false)
     const [formData, setFormData] = useState<Partial<NursingNoteData>>({
         patientId,
         appointmentId,
         noteType: 'progress',
-        isCritical: false
+        isCritical: false,
+        content: ''
     })
+
+    const handleDraftWithAI = async () => {
+        if (!formData.content || formData.content.length < 5) {
+            toast.error('Please enter a few keywords or observations first')
+            return
+        }
+
+        setDrafting(true)
+        try {
+            const result = await generateNursingNoteDraft(formData.content, `Patient: ${patientName}`)
+            if (result.success && result.text) {
+                setFormData(prev => ({ ...prev, content: result.text }))
+                toast.success('AI Draft Generated')
+            } else {
+                toast.error(result.error || 'Failed to generate draft')
+            }
+        } catch (e) {
+            toast.error('AI Draft failed')
+        } finally {
+            setDrafting(false)
+        }
+    }
 
     const handleSubmit = async () => {
         if (!formData.title || !formData.content) {
@@ -50,7 +75,8 @@ export function NursingNotesEditor({ open, onClose, patientId, patientName, appo
                     patientId,
                     appointmentId,
                     noteType: 'progress',
-                    isCritical: false
+                    isCritical: false,
+                    content: ''
                 })
 
                 onClose()
@@ -106,16 +132,32 @@ export function NursingNotesEditor({ open, onClose, patientId, patientName, appo
 
                     {/* Content */}
                     <div className="space-y-2">
-                        <Label>Content *</Label>
+                        <div className="flex justify-between items-center">
+                            <Label>Content *</Label>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDraftWithAI}
+                                disabled={drafting}
+                                className="h-8 gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                            >
+                                {drafting ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    <Sparkles className="h-3 w-3" />
+                                )}
+                                {drafting ? 'Drafting...' : 'Draft with AI'}
+                            </Button>
+                        </div>
                         <Textarea
-                            placeholder="Detailed nursing note content..."
+                            placeholder="Type keywords or observations here, then click 'Draft with AI' to expand..."
                             value={formData.content || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                             rows={10}
-                            className="font-mono text-sm"
+                            className="font-mono text-sm leading-relaxed"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Include patient observations, interventions, and outcomes
+                            Enter rough notes above and let AI format them into a professional nursing note.
                         </p>
                     </div>
 
@@ -146,3 +188,4 @@ export function NursingNotesEditor({ open, onClose, patientId, patientName, appo
         </Dialog>
     )
 }
+

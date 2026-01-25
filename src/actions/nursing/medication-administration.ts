@@ -12,9 +12,14 @@ export interface MedicationData {
     notes?: string
 }
 
+import { auth } from '@clerk/nextjs/server'
+
 export async function scheduleMedication(data: MedicationData) {
     try {
-        const supabase = createClient()
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
+
+        const supabase = await createClient()
 
         const { data: medication, error } = await supabase
             .from('medication_administration')
@@ -25,7 +30,8 @@ export async function scheduleMedication(data: MedicationData) {
                 route: data.route,
                 scheduled_time: data.scheduledTime,
                 notes: data.notes,
-                status: 'scheduled'
+                status: 'scheduled',
+                // recorded_by: userId  <-- Add this if the table has such a column, otherwise existing schema is fine
             })
             .select()
             .single()
@@ -45,19 +51,17 @@ export async function administerMedication(
     notes?: string
 ) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
 
-        if (!user) {
-            return { success: false, error: 'Not authenticated' }
-        }
+        const supabase = await createClient()
 
         const { data: medication, error } = await supabase
             .from('medication_administration')
             .update({
                 status: 'administered',
                 administered_time: new Date().toISOString(),
-                administered_by: user.id,
+                administered_by: userId,
                 notes: notes
             })
             .eq('id', id)
@@ -80,19 +84,17 @@ export async function updateMedicationStatus(
     reason: string
 ) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
 
-        if (!user) {
-            return { success: false, error: 'Not authenticated' }
-        }
+        const supabase = await createClient()
 
         const { data: medication, error } = await supabase
             .from('medication_administration')
             .update({
                 status,
                 reason_not_given: reason,
-                administered_by: user.id,
+                administered_by: userId,
                 administered_time: new Date().toISOString()
             })
             .eq('id', id)
@@ -130,7 +132,7 @@ export async function updateMedicationStatus(
 
 export async function getMedicationSchedule(patientId: string, date?: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const targetDate = date || new Date().toISOString().split('T')[0]
 
         const { data, error } = await supabase
@@ -155,7 +157,7 @@ export async function getMedicationSchedule(patientId: string, date?: string) {
 
 export async function getPendingMedications() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const now = new Date().toISOString()
 
         const { data, error } = await supabase
@@ -180,7 +182,7 @@ export async function getPendingMedications() {
 
 export async function getTodaysMedications() {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const today = new Date().toISOString().split('T')[0]
 
         const { data, error } = await supabase
@@ -199,6 +201,63 @@ export async function getTodaysMedications() {
         return { success: true, data }
     } catch (error: any) {
         console.error('Error fetching today\'s medications:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateMedicationDetails(
+    id: string,
+    data: Partial<MedicationData>
+) {
+    try {
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
+
+        const supabase = await createClient()
+
+        // Construct update object
+        const updates: any = {}
+        if (data.medicationName) updates.medication_name = data.medicationName
+        if (data.dosage) updates.dosage = data.dosage
+        if (data.route) updates.route = data.route
+        if (data.scheduledTime) updates.scheduled_time = data.scheduledTime
+        if (data.notes) updates.notes = data.notes
+
+        const { data: medication, error } = await supabase
+            .from('medication_administration')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+
+        revalidatePath('/dashboard/nurse')
+        return { success: true, data: medication }
+    } catch (error: any) {
+        console.error('Error updating medication details:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function deleteMedication(id: string) {
+    try {
+        const { userId } = await auth()
+        if (!userId) return { success: false, error: 'Not authenticated' }
+
+        const supabase = await createClient()
+
+        const { error } = await supabase
+            .from('medication_administration')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+
+        revalidatePath('/dashboard/nurse')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error deleting medication:', error)
         return { success: false, error: error.message }
     }
 }

@@ -89,14 +89,19 @@ function checkCriticalVitals(vitals: VitalSignsData): { isCritical: boolean; ale
     return { isCritical, alerts }
 }
 
+import { auth } from '@clerk/nextjs/server'
+
+// ... existing imports
+
 export async function recordVitalSigns(data: VitalSignsData) {
     try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { userId } = await auth()
 
-        if (!user) {
-            return { success: false, error: 'Not authenticated' }
+        if (!userId) {
+            return { success: false, error: 'Not authenticated: No session' }
         }
+
+        const supabase = await createClient()
 
         // Check for critical values
         const { isCritical, alerts } = checkCriticalVitals(data)
@@ -107,7 +112,7 @@ export async function recordVitalSigns(data: VitalSignsData) {
             .insert({
                 patient_id: data.patientId,
                 appointment_id: data.appointmentId,
-                recorded_by: user.id,
+                recorded_by: userId,
                 temperature: data.temperature,
                 blood_pressure_systolic: data.bloodPressureSystolic,
                 blood_pressure_diastolic: data.bloodPressureDiastolic,
@@ -210,6 +215,28 @@ export async function getCriticalVitalSigns() {
         return { success: true, data }
     } catch (error: any) {
         console.error('Error fetching critical vital signs:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function getAllRecentVitalSigns(limit: number = 50) {
+    try {
+        const supabase = await createClient()
+
+        const { data, error } = await supabase
+            .from('vital_signs')
+            .select(`
+                *,
+                patient:patients(first_name, last_name, uhid)
+            `)
+            .order('recorded_at', { ascending: false })
+            .limit(limit)
+
+        if (error) throw error
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Error fetching all vital signs:', error)
         return { success: false, error: error.message }
     }
 }

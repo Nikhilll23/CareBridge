@@ -5,14 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { createClient } from '@/lib/supabase/client'
-import { Plus, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { getTodaysMedications, administerMedication, deleteMedication } from '@/actions/nursing/medication-administration'
+import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { MedicationScheduler } from './MedicationScheduler'
 
 export function MedicationsClient() {
     const [medications, setMedications] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState({ total: 0, pending: 0, administered: 0, missed: 0 })
+    const [showScheduler, setShowScheduler] = useState(false)
+    const [selectedMedication, setSelectedMedication] = useState<any>(null)
 
     useEffect(() => {
         loadMedications()
@@ -20,29 +23,18 @@ export function MedicationsClient() {
 
     const loadMedications = async () => {
         try {
-            const supabase = createClient()
-            const today = new Date().toISOString().split('T')[0]
+            const result = await getTodaysMedications()
 
-            // Get today's medications
-            const { data, error } = await supabase
-                .from('medication_administration')
-                .select(`
-                    *,
-                    patient:patients(first_name, last_name)
-                `)
-                .gte('scheduled_time', `${today}T00:00:00`)
-                .lte('scheduled_time', `${today}T23:59:59`)
-                .order('scheduled_time', { ascending: true })
+            if (!result.success) throw new Error(result.error)
 
-            if (error) throw error
-
-            setMedications(data || [])
+            const data = result.data || []
+            setMedications(data)
 
             // Calculate stats
-            const total = data?.length || 0
-            const pending = data?.filter(m => m.status === 'scheduled').length || 0
-            const administered = data?.filter(m => m.status === 'administered').length || 0
-            const missed = data?.filter(m => m.status === 'missed').length || 0
+            const total = data.length
+            const pending = data.filter((m: any) => m.status === 'scheduled').length
+            const administered = data.filter((m: any) => m.status === 'administered').length
+            const missed = data.filter((m: any) => m.status === 'missed').length
 
             setStats({ total, pending, administered, missed })
         } catch (error: any) {
@@ -80,7 +72,7 @@ export function MedicationsClient() {
                     <h1 className="text-3xl font-bold">Medication Administration Record (MAR)</h1>
                     <p className="text-muted-foreground">Today's medication schedule</p>
                 </div>
-                <Button>
+                <Button onClick={() => setShowScheduler(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Schedule Medication
                 </Button>
@@ -175,11 +167,62 @@ export function MedicationsClient() {
                                             </TableCell>
                                             <TableCell>{getStatusBadge(med.status)}</TableCell>
                                             <TableCell>
-                                                {med.status === 'scheduled' && (
-                                                    <Button size="sm" variant="outline">
-                                                        Administer
+                                                <div className="flex items-center gap-2">
+                                                    {med.status === 'scheduled' && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const result = await administerMedication(med.id)
+                                                                    if (result.success) {
+                                                                        toast.success('Medication administered')
+                                                                        loadMedications()
+                                                                    } else {
+                                                                        toast.error(result.error)
+                                                                    }
+                                                                } catch (err) {
+                                                                    toast.error('Failed to administer medication')
+                                                                }
+                                                            }}
+                                                        >
+                                                            Administer
+                                                        </Button>
+                                                    )}
+
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => {
+                                                            setSelectedMedication(med)
+                                                            setShowScheduler(true)
+                                                        }}
+                                                    >
+                                                        <Edit className="h-4 w-4 text-muted-foreground" />
                                                     </Button>
-                                                )}
+
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={async () => {
+                                                            if (confirm('Are you sure you want to delete this medication schedule?')) {
+                                                                try {
+                                                                    const result = await deleteMedication(med.id)
+                                                                    if (result.success) {
+                                                                        toast.success('Medication deleted')
+                                                                        loadMedications()
+                                                                    } else {
+                                                                        toast.error(result.error)
+                                                                    }
+                                                                } catch (err) {
+                                                                    toast.error('Failed to delete medication')
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -189,6 +232,20 @@ export function MedicationsClient() {
                     )}
                 </CardContent>
             </Card>
+            {/* Scheduler Modal */}
+            {showScheduler && (
+                <MedicationScheduler
+                    open={showScheduler}
+                    onClose={() => {
+                        setShowScheduler(false)
+                        setSelectedMedication(null)
+                    }}
+                    patientId=""
+                    patientName="Select Patient"
+                    editData={selectedMedication}
+                    onSuccess={loadMedications}
+                />
+            )}
         </div>
     )
 }
