@@ -16,7 +16,7 @@ export async function createReferral(data: {
         const user = await currentUser()
         if (!user) return { success: false, error: 'Unauthorized' }
 
-        const supabase = createClient()
+        const supabase = await createClient()
 
         // Check if user is patient or doctor
         const { data: userData } = await supabase
@@ -62,21 +62,16 @@ export async function getReferrals(role: 'PATIENT' | 'DOCTOR') {
         const user = await currentUser()
         if (!user) return { success: false, error: 'Unauthorized' }
 
-        const supabase = createClient()
+        const supabase = await createClient()
         let query = supabase
             .from('referrals')
             .select(`
                 *,
-                patient:patients(first_name, last_name),
-                referring_doctor:users!referrals_referring_doctor_id_fkey(first_name, last_name),
-                target_doctor:users!referrals_target_doctor_id_fkey(first_name, last_name)
+                patient:patients(first_name, last_name)
             `)
             .order('created_at', { ascending: false })
 
         if (role === 'PATIENT') {
-            // Patient needs their ID from users table mapping? No, patient_id is usually separate or linked.
-            // Assuming current user is the patient for now
-            // Get patient ID
             const { data: patient } = await supabase.from('patients').select('id').eq('email', user.emailAddresses[0]?.emailAddress).single()
             if (patient) {
                 query = query.eq('patient_id', patient.id)
@@ -84,16 +79,43 @@ export async function getReferrals(role: 'PATIENT' | 'DOCTOR') {
                 return { success: false, error: 'Patient profile not found' }
             }
         } else if (role === 'DOCTOR') {
-            // Doctors see referrals they made OR referrals sent to them
-            // OR referrals for their specialization (if we had that logic, maybe pool)
-            // For now: specific to them or created by them
             query = query.or(`referring_doctor_id.eq.${user.id},target_doctor_id.eq.${user.id}`)
         }
 
-        const { data, error } = await query
+        const { data: referrals, error } = await query
 
         if (error) throw error
-        return { success: true, data }
+
+        // Manually fetch doctor details to avoid join/embedding issues
+        if (referrals && referrals.length > 0) {
+            const doctorIds = new Set<string>()
+            referrals.forEach((ref: any) => {
+                if (ref.referring_doctor_id) doctorIds.add(ref.referring_doctor_id)
+                if (ref.target_doctor_id && !ref.target_doctor_id.startsWith('user_doc_')) doctorIds.add(ref.target_doctor_id)
+            })
+
+            if (doctorIds.size > 0) {
+                const { data: doctors } = await supabase
+                    .from('users')
+                    .select('id, first_name, last_name')
+                    .in('id', Array.from(doctorIds))
+
+                if (doctors) {
+                    const doctorMap = new Map(doctors.map((d: any) => [d.id, d]))
+
+                    return {
+                        success: true,
+                        data: referrals.map((ref: any) => ({
+                            ...ref,
+                            referring_doctor: doctorMap.get(ref.referring_doctor_id) || null,
+                            target_doctor: doctorMap.get(ref.target_doctor_id) || null
+                        }))
+                    }
+                }
+            }
+        }
+
+        return { success: true, data: referrals }
     } catch (error: any) {
         console.error('Get referrals error:', error)
         return { success: false, error: error.message }
@@ -102,7 +124,7 @@ export async function getReferrals(role: 'PATIENT' | 'DOCTOR') {
 
 export async function updateReferralStatus(id: string, status: ReferralStatus, notes?: string) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const { error } = await supabase
             .from('referrals')
             .update({ status, notes, updated_at: new Date().toISOString() })
@@ -120,7 +142,7 @@ export async function updateReferralStatus(id: string, status: ReferralStatus, n
 }
 
 export async function getDoctorsBySpecialization(specialization: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data } = await supabase
         .from('users')
         .select('id, first_name, last_name, specialization')

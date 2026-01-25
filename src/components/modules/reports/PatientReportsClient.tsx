@@ -44,7 +44,17 @@ export function PatientReportsClient({ reports }: PatientReportsClientProps) {
 
         // Content
         doc.setFontSize(11)
-        const splitText = doc.splitTextToSize(report.raw_text || 'No content', 170)
+
+        // Clean text formatting
+        let cleanContent = report.raw_text || 'No content'
+        // Replace literal \n with actual newlines
+        cleanContent = cleanContent.replace(/\\n/g, '\n')
+        // Remove markdown bold markers
+        cleanContent = cleanContent.replace(/\*\*/g, '')
+        // Remove markdown headers #
+        cleanContent = cleanContent.replace(/#/g, '')
+
+        const splitText = doc.splitTextToSize(cleanContent, 170)
         doc.text(splitText, 20, 73)
 
         // Footer

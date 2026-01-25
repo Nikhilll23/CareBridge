@@ -223,6 +223,7 @@ export function DoctorReferralsClient({ initialReferrals, doctorId }: ClientProp
                 onOpenChange={setShowCreateModal}
                 doctorId={doctorId}
             />
+
         </>
     )
 }

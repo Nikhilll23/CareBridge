@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { currentUser } from '@clerk/nextjs/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { revalidatePath } from 'next/cache'
+import { analyzeMedicalData } from '@/lib/groq'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
@@ -48,25 +49,47 @@ If any field is not present in the image, leave it as empty string or empty arra
         const response = await result.response
         const text = response.text()
 
-        // Try to parse JSON, if fails return raw text
+        // Try to parse JSON
+        let parsedData = null
         try {
             const jsonMatch = text.match(/\{[\s\S]*\}/)
             if (jsonMatch) {
-                return {
-                    success: true,
-                    data: JSON.parse(jsonMatch[0]),
-                    rawText: text
-                }
+                parsedData = JSON.parse(jsonMatch[0])
             }
         } catch (e) {
-            // If JSON parsing fails, return raw text
+            console.error('JSON Parse Error:', e)
+        }
+
+        // Format with Groq if we have data
+        let formattedText = text
+        if (parsedData) {
+            try {
+                // Determine context from data
+                const context = JSON.stringify(parsedData, null, 2)
+                const groqResponse = await analyzeMedicalData(
+                    context,
+                    `Convert this structured medical data into a clean, professional, and easy-to-read text report.
+                    Use Markdown formatting.
+                    Create sections for Symptoms, Observations, Vital Signs, Diagnosis, Recommendations, etc.
+                    Do not output JSON. Output only the formatted text.
+                    Make it look like a standard medical report.`
+                )
+
+                if (groqResponse.success && groqResponse.message) {
+                    formattedText = groqResponse.message
+                }
+            } catch (groqError) {
+                console.error('Groq Formatting Error:', groqError)
+            }
         }
 
         return {
             success: true,
-            data: null,
-            rawText: text
+            data: parsedData,
+            rawText: formattedText, // Use the formatted text as the primary rawText for display
+            originalJson: parsedData // Keep original structure if needed
         }
+
     } catch (error: any) {
         console.error('OCR Error:', error)
         return {

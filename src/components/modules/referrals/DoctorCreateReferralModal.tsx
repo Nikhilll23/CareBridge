@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -20,6 +21,7 @@ interface ReferralModalProps {
 }
 
 export function DoctorCreateReferralModal({ open, onOpenChange, doctorId }: ReferralModalProps) {
+    const router = useRouter()
     const [specialization, setSpecialization] = useState('')
     const [doctors, setDoctors] = useState<any[]>([])
     const [patients, setPatients] = useState<any[]>([])
@@ -72,6 +74,7 @@ export function DoctorCreateReferralModal({ open, onOpenChange, doctorId }: Refe
             if (result.success) {
                 toast.success('Referral created successfully')
                 onOpenChange(false)
+                router.refresh()
                 // Reset form
                 setSpecialization('')
                 setSelectedDoctor('')
