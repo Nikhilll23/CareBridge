@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, Clock, User, FileText, Stethoscope, Plus } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, User, FileText, Stethoscope } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
   Dialog,
@@ -73,6 +73,7 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     doctorId: '',
     time: '',
     reason: '',
+    reason: '',
     notes: '',
   })
 
@@ -81,50 +82,6 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   const debouncedSymptom = useDebounce(symptomQuery, 1000) // 1 second debounce
-
-  // Multi-doctor state
-  const [additionalDoctors, setAdditionalDoctors] = useState<{
-    id: string; // unique ID for the row
-    specialization: string;
-    doctorId: string;
-    reason: string;
-  }[]>([])
-
-  const addDoctorRow = () => {
-    setAdditionalDoctors([...additionalDoctors, {
-      id: Math.random().toString(36).substr(2, 9),
-      specialization: 'all',
-      doctorId: '',
-      reason: ''
-    }])
-  }
-
-  const removeDoctorRow = (rowId: string) => {
-    setAdditionalDoctors(prev => prev.filter(p => p.id !== rowId))
-  }
-
-  const updateDoctorRow = (rowId: string, field: 'specialization' | 'doctorId' | 'reason', value: string) => {
-    setAdditionalDoctors(prev => prev.map(row => {
-      if (row.id === rowId) {
-        const updated = { ...row, [field]: value }
-        // Reset doctor if specialization changes
-        if (field === 'specialization') {
-          updated.doctorId = ''
-        }
-        return updated
-      }
-      return row
-    }))
-  }
-
-  // Helper to get doctors for a specific row specialization
-  const getDoctorsForSpec = (spec: string) => {
-    if (!spec || spec === 'all') return doctors
-    return doctors.filter(doc =>
-      doc.specialization === spec ||
-      (!doc.specialization && spec === 'General Physician')
-    )
-  }
 
   // Auto-map symptom to specialization
   useEffect(() => {
@@ -173,16 +130,8 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     e.preventDefault()
 
     if (!date || !formData.patientId || !formData.doctorId || !formData.time || !formData.reason) {
-      toast.error('Please fill all required fields for primary appointment')
+      toast.error('Please fill all required fields')
       return
-    }
-
-    // Validate additional doctors
-    for (const doc of additionalDoctors) {
-      if (!doc.doctorId || !doc.reason) {
-        toast.error('Please fill Doctor and Reason for all additional consultations')
-        return
-      }
     }
 
     setLoading(true)
@@ -192,33 +141,16 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
       const appointmentDate = new Date(date)
       appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
 
-      const isoDate = appointmentDate.toISOString()
-      const appointmentsToCreate = [
-        {
-          patientId: formData.patientId,
-          doctorId: formData.doctorId,
-          appointmentDate: isoDate,
-          reason: formData.reason,
-          notes: formData.notes
-        },
-        ...additionalDoctors.map(doc => ({
-          patientId: formData.patientId,
-          doctorId: doc.doctorId,
-          appointmentDate: isoDate, // Same time for now, or could ask for offset
-          reason: doc.reason,
-          notes: `Additional consultation via Multi-Doctor Initializer. ${formData.notes}`
-        }))
-      ]
+      const result = await createAppointment({
+        patientId: formData.patientId,
+        doctorId: formData.doctorId,
+        appointmentDate: appointmentDate.toISOString(),
+        reason: formData.reason,
+        notes: formData.notes,
+      })
 
-      let successCount = 0
-
-      for (const apt of appointmentsToCreate) {
-        const result = await createAppointment(apt)
-        if (result.success) successCount++
-      }
-
-      if (successCount === appointmentsToCreate.length) {
-        toast.success(`Successfully scheduled ${successCount} appointment(s)!`)
+      if (result.success) {
+        toast.success(result.message || 'Appointment scheduled successfully!')
         setOpen(false)
         setDate(undefined)
         setSelectedSpecialization('all')
@@ -229,10 +161,9 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
           reason: '',
           notes: '',
         })
-        setAdditionalDoctors([])
         onSuccess?.()
       } else {
-        toast.warning(`Scheduled ${successCount}/${appointmentsToCreate.length} appointments. Some failed.`)
+        toast.error(result.error || 'Failed to schedule appointment')
       }
     } catch (error) {
       toast.error('An unexpected error occurred')
@@ -249,11 +180,11 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
           Schedule Appointment
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto w-full">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schedule New Appointment</DialogTitle>
           <DialogDescription>
-            Create appointment(s) for a patient. Add multiple doctors if needed.
+            Create a new appointment for a patient
           </DialogDescription>
         </DialogHeader>
 
@@ -282,235 +213,153 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
             </Select>
           </div>
 
+          {/* AI Symptom Search */}
+          <div className="space-y-2">
+            <Label htmlFor="symptom-search" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-purple-500" />
+              AI Symptom Matcher
+              <span className="text-xs font-normal text-muted-foreground">(Type a condition to auto-select specialist)</span>
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="symptom-search"
+                placeholder="e.g. chest pain, skin rash, blurry vision..."
+                className="pl-9 pr-9"
+                value={symptomQuery}
+                onChange={(e) => setSymptomQuery(e.target.value)}
+              />
+              {isAnalyzing && (
+                <div className="absolute right-3 top-2.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Specialization Filter */}
+          <div className="space-y-2">
+            <Label>
+              <Stethoscope className="h-4 w-4 inline mr-2" />
+              Filter by Specialization
+            </Label>
+            <Select
+              value={selectedSpecialization}
+              onValueChange={(value) => {
+                setSelectedSpecialization(value)
+                setFormData(prev => ({ ...prev, doctorId: '' })) // Reset doctor selection
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Specializations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Specializations</SelectItem>
+                {SPECIALIZATIONS.map(spec => (
+                  <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Doctor Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="doctor">
+              <User className="h-4 w-4 inline mr-2" />
+              Doctor *
+            </Label>
+            <Select
+              value={formData.doctorId}
+              onValueChange={(value) => setFormData({ ...formData, doctorId: value })}
+              disabled={filteredDoctors.length === 0}
+            >
+              <SelectTrigger id="doctor">
+                <SelectValue placeholder={filteredDoctors.length === 0 ? "No doctors found for this specialization" : "Select a doctor"} />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredDoctors.map((doctor) => (
+                  <SelectItem key={doctor.id} value={doctor.id}>
+                    {doctor.full_name} {doctor.specialization ? `(${doctor.specialization})` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
-            {/* AI Symptom Search */}
-            <div className="space-y-2 col-span-2 md:col-span-1">
-              <Label htmlFor="symptom-search" className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-500" />
-                AI Symptom Matcher
+            <div className="space-y-2">
+              <Label>
+                <CalendarIcon className="h-4 w-4 inline mr-2" />
+                Date *
               </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="symptom-search"
-                  placeholder="Auto-select specialist..."
-                  className="pl-9 pr-9"
-                  value={symptomQuery}
-                  onChange={(e) => setSymptomQuery(e.target.value)}
-                />
-                {isAnalyzing && (
-                  <div className="absolute right-3 top-2.5">
-                    <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Date and Time */}
-            <div className="space-y-2 col-span-2 md:col-span-1">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal px-2',
-                          !date && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, 'dd/MM') : <span>Pick</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-1">
-                  <Label>Time</Label>
-                  <Select
-                    value={formData.time}
-                    onValueChange={(value) => setFormData({ ...formData, time: value })}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                    )}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_SLOTS.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="time">
+                <Clock className="h-4 w-4 inline mr-2" />
+                Time *
+              </Label>
+              <Select
+                value={formData.time}
+                onValueChange={(value) => setFormData({ ...formData, time: value })}
+              >
+                <SelectTrigger id="time">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_SLOTS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Primary Consultation */}
-          <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-sm flex items-center gap-2">
-                <Stethoscope className="h-4 w-4 text-primary" />
-                Primary Consultation
-              </h4>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-xs">Specialization</Label>
-                <Select
-                  value={selectedSpecialization}
-                  onValueChange={(value) => {
-                    setSelectedSpecialization(value)
-                    setFormData(prev => ({ ...prev, doctorId: '' }))
-                  }}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="All Specializations" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Specializations</SelectItem>
-                    {SPECIALIZATIONS.map(spec => (
-                      <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Doctor *</Label>
-                <Select
-                  value={formData.doctorId}
-                  onValueChange={(value) => setFormData({ ...formData, doctorId: value })}
-                  disabled={filteredDoctors.length === 0}
-                >
-                  <SelectTrigger className="h-9" id="doctor">
-                    <SelectValue placeholder={filteredDoctors.length === 0 ? "No doctors found" : "Select Doctor"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredDoctors.map((doctor) => (
-                      <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.full_name} {doctor.specialization ? `(${doctor.specialization})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-xs">Reason *</Label>
-                <Input
-                  placeholder="e.g., Stomach pain"
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  required
-                  className="h-9"
-                />
-              </div>
-            </div>
+          {/* Reason */}
+          <div className="space-y-2">
+            <Label htmlFor="reason">
+              <FileText className="h-4 w-4 inline mr-2" />
+              Reason for Visit *
+            </Label>
+            <Input
+              id="reason"
+              placeholder="e.g., Regular checkup, Follow-up"
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              required
+            />
           </div>
 
-          {/* Additional Consultations */}
-          {additionalDoctors.map((row, index) => {
-            const rowDoctors = getDoctorsForSpec(row.specialization)
-            return (
-              <div key={row.id} className="border rounded-lg p-4 bg-muted/30 space-y-4 relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  className="absolute right-2 top-2 h-6 w-6 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => removeDoctorRow(row.id)}
-                >
-                  <span className="sr-only">Remove</span>
-                  x
-                </Button>
-
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-sm flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-purple-600" />
-                    Additional Consultation #{index + 1}
-                  </h4>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Specialization</Label>
-                    <Select
-                      value={row.specialization}
-                      onValueChange={(value) => updateDoctorRow(row.id, 'specialization', value)}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="All Specializations" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Specializations</SelectItem>
-                        {SPECIALIZATIONS.map(spec => (
-                          <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Doctor *</Label>
-                    <Select
-                      value={row.doctorId}
-                      onValueChange={(value) => updateDoctorRow(row.id, 'doctorId', value)}
-                      disabled={rowDoctors.length === 0}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder={rowDoctors.length === 0 ? "No doctors found" : "Select Doctor"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {rowDoctors.map((doctor) => (
-                          <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.full_name} {doctor.specialization ? `(${doctor.specialization})` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label className="text-xs">Reason *</Label>
-                    <Input
-                      placeholder="Reason for this consultation"
-                      value={row.reason}
-                      onChange={(e) => updateDoctorRow(row.id, 'reason', e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full border-dashed"
-            onClick={addDoctorRow}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Another Doctor
-          </Button>
-
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Scheduling...' : `Schedule ${additionalDoctors.length + 1} Appointment(s)`}
+              {loading ? 'Scheduling...' : 'Schedule Appointment'}
             </Button>
           </div>
         </form>
