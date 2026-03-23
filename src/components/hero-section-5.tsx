@@ -51,7 +51,7 @@ export function HeroSection() {
                             playsInline
                             className="h-full w-full object-cover opacity-50 invert dark:opacity-35 dark:invert-0 dark:lg:opacity-75"
                         >
-                            <source src="/dna.mp4" type="video/mp4" />
+                            <source src="/new-dna.mp4" type="video/mp4" />
                         </video>
                         {/* Optional overlay for better text readability */}
                         <div className="absolute inset-0 bg-black/20" />
@@ -61,10 +61,10 @@ export function HeroSection() {
                         <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
                                 <h1 className="mt-8 max-w-2xl text-balance font-outfit text-5xl font-bold tracking-tight md:text-6xl lg:mt-16 xl:text-7xl">
-                                    Hospital Information System
+                                    CareBridge
                                 </h1>
                                 <p className="mt-8 max-w-2xl text-white text-balance font-inter text-lg font-light leading-relaxed tracking-wide text-muted-foreground">
-                                    Digitize and connect OPD, IPD, labs, pharmacy, billing, and EMR into one secure platform. Get real-time visibility into patients, resources, and revenue—without operational chaos.
+                                    Seamlessly integrate OPD, labs, pharmacy, billing, and EMR into one secure, cohesive platform. Monitor patients, optimize resources, and track revenue in real time—without the friction of disconnected systems.
                                 </p>
 
                                 <div className="mt-12 flex flex-col items-center justify-center gap-2 sm:flex-row lg:justify-start">
@@ -321,7 +321,7 @@ export const HeroHeader = () => {
             <nav
                 data-state={menuState && 'active'}
                 className="group fixed z-20 w-full pt-2">
-                <div className={cn('mx-auto max-w-7xl rounded-3xl px-6 transition-all duration-300 lg:px-12', scrolled && 'bg-background/50 backdrop-blur-2xl')}>
+                <div className={cn('mx-auto max-w-7xl rounded-3xl px-6 transition-all duration-300 lg:px-12', scrolled && 'bg-background/80 backdrop-blur-2xl')}>
                     <motion.div
                         key={1}
                         className={cn('relative flex flex-wrap items-center justify-between gap-6 py-3 duration-200 lg:gap-0 lg:py-6', scrolled && 'lg:py-4')}>
@@ -347,7 +347,7 @@ export const HeroHeader = () => {
                                         <li key={index}>
                                             <Link
                                                 href={item.href}
-                                                className="font-inter font-medium text-muted-foreground transition-colors duration-150 hover:text-accent-foreground">
+                                                className={cn("font-inter font-medium transition-colors duration-150", scrolled ? "text-foreground hover:text-foreground/70" : "text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] hover:text-white/80")}>
                                                 <span>{item.name}</span>
                                             </Link>
                                         </li>
@@ -400,10 +400,7 @@ export const HeroHeader = () => {
 export const Logo = ({ className }: { className?: string }) => {
     return (
         <div className={cn("flex items-center gap-2", className)}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-lg font-bold text-primary-foreground">H</span>
-            </div>
-            <span className="text-xl font-bold tracking-tight">HIS Core</span>
+            <img src="/carebridge-logo.png" alt="CareBridge" className="h-10 w-auto object-contain rounded-md" />
         </div>
     )
 }

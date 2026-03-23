@@ -1,5 +1,5 @@
 // =====================================================
-// Global Type Definitions for Hospital Information System
+// Global Type Definitions for CareBridge
 // =====================================================
 
 // User Role Enum (matches Supabase enum)

@@ -79,11 +79,27 @@ export async function getAppointments(filters?: {
       const userEmail = user.emailAddresses[0]?.emailAddress
       if (!userEmail) return { success: true, data: [] }
 
-      const { data: patientProfile } = await supabaseAdmin
+      let { data: patientProfile } = await supabaseAdmin
         .from('patients')
         .select('id')
         .eq('email', userEmail)
         .single()
+
+      if (!patientProfile) {
+        const firstName = user.firstName || ''
+        const lastName = user.lastName || ''
+        const { data: patientByName } = await supabaseAdmin
+          .from('patients')
+          .select('id')
+          .ilike('first_name', `%${firstName}%`)
+          .ilike('last_name', `%${lastName}%`)
+          .single()
+        patientProfile = patientByName
+
+        if (patientByName) {
+          await supabaseAdmin.from('patients').update({ email: userEmail }).eq('id', patientByName.id)
+        }
+      }
 
       if (!patientProfile) {
         return { success: true, data: [] }
@@ -420,7 +436,7 @@ export async function getDoctors() {
   try {
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select('id, first_name, last_name, email, role, specialization')
+      .select('id, first_name, last_name, email, role')
       .eq('role', 'DOCTOR')
       .order('first_name', { ascending: true })
 
@@ -435,7 +451,6 @@ export async function getDoctors() {
       full_name: `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim() || doctor.email,
       email: doctor.email,
       role: doctor.role,
-      specialization: doctor.specialization // Include specialization
     }))
 
     return { success: true, data: formattedDoctors }

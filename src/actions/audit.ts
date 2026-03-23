@@ -11,19 +11,18 @@ export async function logAuditAction(
     recordId: string,
     details: any
 ) {
-    try {
-        const { error } = await supabaseAdmin.from('audit_logs').insert({
-            action: action,
-            entity: table,
-            entity_id: recordId,
-            details: details,
-            user_id: 'SYSTEM', // Fallback
-        })
-
-        if (error) console.error('Audit Log Error:', error)
-    } catch (err) {
-        console.error('Audit Exception:', err)
-    }
+    // Fire and forget - never block auth flow
+    supabaseAdmin.from('audit_logs').insert({
+        action: action,
+        entity: table,
+        entity_id: recordId,
+        details: details,
+        user_id: 'SYSTEM',
+    }).then(({ error }) => {
+        if (error) console.warn('Audit Log Error (non-critical):', error.message)
+    }).catch(() => {
+        // Silently ignore - audit table may not exist yet
+    })
 }
 
 // --- Retrieval ---

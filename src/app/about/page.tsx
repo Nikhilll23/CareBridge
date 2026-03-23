@@ -8,7 +8,7 @@ export default function AboutPage() {
             <main className="pt-32 min-h-screen container mx-auto px-6">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-16">
-                        <h1 className="text-4xl font-bold mb-6">About HIS Core</h1>
+                        <h1 className="text-4xl font-bold mb-6">About CareBridge</h1>
                         <p className="text-xl text-muted-foreground">
                             Reimagining healthcare management for the digital age.
                         </p>
@@ -16,7 +16,7 @@ export default function AboutPage() {
 
                     <div className="prose dark:prose-invert max-w-none">
                         <p className="text-lg leading-relaxed mb-6">
-                            HIS Core was founded with a mission to simplify the complex operations of modern hospitals. We believe that technology should empower healthcare providers, not burden them. Our unified platform connects every department, from the reception desk to the operating theatre, ensuring seamless data flow and better patient care.
+                            CareBridge was founded with a mission to simplify the complex operations of modern hospitals. We believe that technology should empower healthcare providers, not burden them. Our unified platform connects every department, from the reception desk to the operating theatre, ensuring seamless data flow and better patient care.
                         </p>
                         <p className="text-lg leading-relaxed mb-6">
                             With a team of dedicated engineers and healthcare experts, we are committed to building the most intuitive, secure, and scalable hospital information system in the world.

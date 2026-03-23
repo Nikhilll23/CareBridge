@@ -101,20 +101,30 @@ export async function updateConsultation(appointmentId: string, notes: string, p
 
         // 2. Create Prescription if provided
         if (prescriptionData) {
+            // Get patient_id from appointment
+            const { data: apptData } = await supabaseAdmin
+                .from('appointments')
+                .select('patient_id')
+                .eq('id', appointmentId)
+                .single()
+
             const { error: rxError } = await supabaseAdmin
                 .from('prescriptions')
                 .insert({
                     appointment_id: appointmentId,
+                    patient_id: apptData?.patient_id,
                     drug_name: prescriptionData.drugName,
                     dosage: prescriptionData.dosage,
                     frequency: prescriptionData.frequency,
                     duration: prescriptionData.duration,
                     instructions: prescriptionData.instructions
                 })
+                .select()
 
-            if (rxError) throw rxError
-
-            if (rxError) throw rxError
+            if (rxError) {
+                console.error('Prescription insert error:', rxError)
+                throw rxError
+            }
 
             // Deduct inventory
             // We attempt to find the drug by name to deduct stock

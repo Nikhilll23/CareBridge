@@ -52,43 +52,16 @@ export async function getPatientPortalData() {
 
     if (!patient) return null // Truly failed to link
 
-    // 2. Today's and Upcoming Appointments
-    const now = new Date()
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
-
-    // Get today's appointments
-    const { data: todayData } = await supabaseAdmin
+    // 2. All Appointments
+    const { data: allAppointmentsData } = await supabaseAdmin
         .from('appointments')
         .select('*')
         .eq('patient_id', patient.id)
-        .gte('appointment_date', todayStart)
-        .lt('appointment_date', todayEnd)
-        .order('appointment_date', { ascending: true })
-
-    // Get future appointments (after today)
-    const { data: futureData } = await supabaseAdmin
-        .from('appointments')
-        .select('*')
-        .eq('patient_id', patient.id)
-        .gte('appointment_date', todayEnd)
-        .order('appointment_date', { ascending: true })
-        .limit(5)
-
-    // 3. Past History
-    const { data: pastData } = await supabaseAdmin
-        .from('appointments')
-        .select('*')
-        .eq('patient_id', patient.id)
-        .lt('appointment_date', todayStart)
         .order('appointment_date', { ascending: false })
-        .limit(5)
 
     // Fetch doctors for appointments
     const doctorIds = new Set<string>()
-    todayData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
-    futureData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
-    pastData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
+    allAppointmentsData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
 
     const { data: doctorsMap } = await supabaseAdmin
         .from('users')
@@ -100,9 +73,10 @@ export async function getPatientPortalData() {
         return { ...appt, doctor: doc }
     }
 
-    const todaysAppointments = todayData?.map(enhanceAppointment) || []
-    const futureAppointments = futureData?.map(enhanceAppointment) || []
-    const past = pastData?.map(enhanceAppointment) || []
+    const allAppointments = allAppointmentsData?.map(enhanceAppointment) || []
+    const todaysAppointments = allAppointments
+    const futureAppointments: any[] = []
+    const past: any[] = []
 
     // 4. Invoices (Wallet)
     const { data: invoices } = await supabaseAdmin
@@ -111,11 +85,33 @@ export async function getPatientPortalData() {
         .eq('patient_id', patient.id)
         .eq('status', 'PENDING')
 
-    // 5. Available Doctors
+    // 5. Available Doctors (exclude sample doctors)
     const { data: doctors } = await supabaseAdmin
         .from('users')
         .select('id, first_name, last_name')
         .eq('role', 'DOCTOR')
+        .not('id', 'in', '(user_doctor1_sample,user_doctor2_sample,user_doctor3_sample,user_doctor4_sample,user_doctor5_sample)')
+
+    // 6. Patient Prescriptions
+    const { data: prescriptions } = await supabaseAdmin
+        .from('prescriptions')
+        .select('*')
+        .eq('patient_id', patient.id)
+        .order('created_at', { ascending: false })
+
+    // 7. Documents: medical reports, handwritten notes
+    const { data: medicalReports } = await supabaseAdmin
+        .from('medical_reports')
+        .select('id, title, report_type, created_at, status, file_url')
+        .eq('patient_id', patient.id)
+        .eq('status', 'SENT')
+        .order('created_at', { ascending: false })
+
+    const { data: handwrittenNotes } = await supabaseAdmin
+        .from('handwritten_notes')
+        .select('id, title, note_type, image_data, created_at')
+        .eq('patient_id', patient.id)
+        .order('created_at', { ascending: false })
 
     const totalDue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
 
@@ -126,7 +122,10 @@ export async function getPatientPortalData() {
         past,
         totalDue,
         invoices: invoices || [],
-        availableDoctors: doctors || []
+        availableDoctors: doctors || [],
+        prescriptions: prescriptions || [],
+        medicalReports: medicalReports || [],
+        handwrittenNotes: handwrittenNotes || []
     }
 }
 
@@ -135,31 +134,62 @@ export async function bookAppointment(data: any) {
         const user = await currentUser()
         if (!user) throw new Error('Unauthorized')
 
-        // Find patient again
-        const { data: patient } = await supabaseAdmin
+        const userEmail = user.emailAddresses[0]?.emailAddress
+        if (!userEmail) throw new Error('No email found')
+
+        // Find or auto-create patient record
+        let { data: patient } = await supabaseAdmin
             .from('patients')
             .select('id')
-            .eq('email', user.emailAddresses[0]?.emailAddress)
+            .eq('email', userEmail)
             .single()
 
-        if (!patient) throw new Error('Patient profile not found')
+        if (!patient) {
+            const { data: newPatient, error: createError } = await supabaseAdmin
+                .from('patients')
+                .insert({
+                    first_name: user.firstName || 'Unknown',
+                    last_name: user.lastName || 'User',
+                    email: userEmail,
+                    gender: 'Other',
+                    contact_number: 'N/A',
+                    address: 'N/A',
+                    date_of_birth: new Date().toISOString()
+                })
+                .select('id')
+                .single()
+
+            if (createError || !newPatient) throw new Error('Failed to create patient profile')
+            patient = newPatient
+        }
+
+        // Ensure user record exists with PATIENT role
+        await supabaseAdmin
+            .from('users')
+            .upsert({
+                id: user.id,
+                email: userEmail,
+                first_name: user.firstName || '',
+                last_name: user.lastName || '',
+                role: 'PATIENT'
+            }, { onConflict: 'id', ignoreDuplicates: true })
 
         // Create Appointment
         const { error } = await supabaseAdmin
             .from('appointments')
             .insert({
                 patient_id: patient.id,
-                doctor_id: data.doctorId, // Optional or assigned
-                appointment_date: data.date, // ISO string
+                doctor_id: data.doctorId,
+                appointment_date: data.date,
                 reason: data.reason,
-                status: 'SCHEDULED', // Waiting approval
+                status: 'SCHEDULED',
             })
 
         if (error) throw error
 
         revalidatePath('/dashboard/patient')
-        revalidatePath('/dashboard/appointments') // Admin view
-        revalidatePath('/dashboard/doctor') // Doctor view
+        revalidatePath('/dashboard/appointments')
+        revalidatePath('/dashboard/doctor')
         return { success: true }
     } catch (error: any) {
         console.error('Booking Error:', error)

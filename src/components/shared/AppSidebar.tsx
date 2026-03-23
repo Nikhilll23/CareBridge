@@ -408,11 +408,9 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
 
       {/* Logo Area */}
       <div className={cn('flex items-center gap-3 px-6 mb-8', isCollapsed && 'justify-center px-2')}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Activity className="h-5 w-5" />
-        </div>
+        <img src="/carebridge-logo.png" alt="CareBridge" className="h-8 w-8 object-contain rounded-md shrink-0" />
         {!isCollapsed && (
-          <span className="font-bold text-lg tracking-tight">HIS Core</span>
+          <span className="font-bold text-lg tracking-tight">CareBridge</span>
         )}
       </div>
 
@@ -482,7 +480,7 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
         <Separator className="my-4" />
         {!isCollapsed && (
           <div className="px-4 text-xs text-muted-foreground text-center">
-            v1.0.0 HIS Core
+            v1.0.0 CareBridge
           </div>
         )}
       </div>

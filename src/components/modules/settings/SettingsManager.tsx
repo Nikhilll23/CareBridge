@@ -96,7 +96,7 @@ export function SettingsManager({ user }: SettingsManagerProps) {
         const data = {
             user: user,
             timestamp: new Date().toISOString(),
-            system: 'Hospital Information System',
+            system: 'CareBridge',
             version: '1.0.0'
         }
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })

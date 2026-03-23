@@ -27,12 +27,21 @@ export function CornerstoneViewer({ imageUrl, className }: CornerstoneViewerProp
                 setLoading(true)
 
                 // Dynamically import libraries to ensure they run only on client
-                const cornerstone = (await import('cornerstone-core')).default
-                const cornerstoneMath = (await import('cornerstone-math')).default
-                const cornerstoneTools = (await import('cornerstone-tools')).default
-                const cornerstoneWADOImageLoader = (await import('cornerstone-wado-image-loader')).default
-                const dicomParser = await import('dicom-parser')
-                const hammer = (await import('hammerjs')).default
+                let cornerstone: any, cornerstoneTools: any, cornerstoneWADOImageLoader: any, dicomParser: any, hammer: any
+
+                try {
+                    cornerstone = (await import('cornerstone-core')).default
+                    const cornerstoneMath = (await import('cornerstone-math')).default
+                    cornerstoneTools = (await import('cornerstone-tools')).default
+                    cornerstoneWADOImageLoader = (await import('cornerstone-wado-image-loader')).default
+                    dicomParser = await import('dicom-parser')
+                    hammer = (await import('hammerjs')).default
+                } catch (importErr) {
+                    console.error('Cornerstone Load Error:', importErr)
+                    if (mounted) setError('DICOM viewer libraries failed to load')
+                    setLoading(false)
+                    return
+                }
 
                 // Configure WADO Image Loader
                 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
@@ -125,8 +134,21 @@ export function CornerstoneViewer({ imageUrl, className }: CornerstoneViewerProp
                 </div>
             )}
             {error && (
-                <div className="absolute inset-0 flex items-center justify-center text-red-500 z-10">
-                    <p>{error}</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-10">
+                    <p className="text-red-400 font-medium mb-2">{error}</p>
+                    <p className="text-muted-foreground text-sm">
+                        The DICOM viewer could not load. You can try opening the image directly:
+                    </p>
+                    {imageUrl && (
+                        <a
+                            href={imageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 text-sm text-blue-400 underline"
+                        >
+                            Open image in new tab
+                        </a>
+                    )}
                 </div>
             )}
             <div

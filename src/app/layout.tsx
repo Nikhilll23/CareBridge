@@ -28,7 +28,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Hospital Information System",
+  title: "CareBridge",
   description: "Comprehensive Hospital Management System",
 };
 

@@ -191,7 +191,7 @@ export function VoiceRecorder({ open, onClose, patientId, patientName, appointme
             doc.setPage(i)
             doc.setFontSize(10)
             doc.text(`Page ${i} of ${pageCount}`, 20, 285)
-            doc.text('HIS Core - Hospital Information System', 150, 285)
+            doc.text('CareBridge', 150, 285)
         }
 
         return doc

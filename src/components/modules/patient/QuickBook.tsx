@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,16 +27,11 @@ interface QuickBookProps {
 
 export function QuickBook({ doctors = [] }: QuickBookProps) {
     const [date, setDate] = useState<Date>()
+    const [calendarOpen, setCalendarOpen] = useState(false)
+    const [time, setTime] = useState('09:00')
     const [reason, setReason] = useState('')
     const [doctorId, setDoctorId] = useState<string>()
     const [loading, setLoading] = useState(false)
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
-
-    if (!mounted) return null
 
     const handleBook = async () => {
         if (!date || !reason || !doctorId) {
@@ -44,10 +39,15 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
             return
         }
 
+        // Combine date + time into a single ISO string
+        const [hours, minutes] = time.split(':').map(Number)
+        const combined = new Date(date)
+        combined.setHours(hours, minutes, 0, 0)
+
         setLoading(true)
         try {
             const res = await bookAppointment({
-                date: date.toISOString(),
+                date: combined.toISOString(),
                 reason,
                 doctorId
             })
@@ -57,6 +57,7 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
                 setReason('')
                 setDoctorId(undefined)
                 setDate(undefined)
+                setTime('09:00')
             } else {
                 toast.error(res.error || 'Failed to book')
             }
@@ -75,7 +76,7 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <Label>Preferred Date</Label>
-                    <Popover>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant={"outline"}
@@ -92,11 +93,22 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
                             <Calendar
                                 mode="single"
                                 selected={date}
-                                onSelect={setDate}
+                                onSelect={(d) => { setDate(d); setCalendarOpen(false) }}
+                                disabled={(day) => day < new Date(new Date().setHours(0, 0, 0, 0))}
                                 initialFocus
                             />
                         </PopoverContent>
                     </Popover>
+                </div>
+
+                <div className="space-y-2">
+                    <Label>Preferred Time</Label>
+                    <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
                 </div>
 
                 <div className="space-y-2">

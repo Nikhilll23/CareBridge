@@ -41,7 +41,7 @@ export default function PricingPage() {
                 key: res.keyId,
                 amount: res.amount,
                 currency: res.currency,
-                name: 'HIS Core Hospital',
+                name: 'CareBridge Hospital',
                 description: `Subscription: ${planName}`,
                 order_id: res.orderId,
                 handler: function (response: any) {

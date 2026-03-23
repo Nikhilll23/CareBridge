@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { Map, AlertTriangle } from 'lucide-react'
 
 export const metadata = {
-    title: 'Emergency - HIS Core',
+    title: 'Emergency - CareBridge',
     description: 'Emergency Services and Ambulance Booking'
 }
 

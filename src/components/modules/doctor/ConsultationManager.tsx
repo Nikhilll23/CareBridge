@@ -132,16 +132,14 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
         }
     }
 
-    if (!appointment) return null
-
-    const patientName = `${appointment.patients?.first_name} ${appointment.patients?.last_name}`
+    const patientName = appointment ? `${appointment.patients?.first_name} ${appointment.patients?.last_name}` : ''
 
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={onClose}>
+            <Dialog open={isOpen && !!appointment} onOpenChange={onClose}>
                 <DialogContent className="!max-w-[98vw] w-[98vw] !h-[95vh] flex flex-col p-6">
                     <DialogHeader>
-                        <DialogTitle>Consultation: {appointment.patients?.first_name} {appointment.patients?.last_name}</DialogTitle>
+                        <DialogTitle>Consultation: {appointment?.patients?.first_name} {appointment?.patients?.last_name}</DialogTitle>
                     </DialogHeader>
 
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 overflow-y-auto p-1">
@@ -150,8 +148,8 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                             <div className="rounded-lg border p-4 bg-muted/50">
                                 <h3 className="font-semibold mb-2">Patient Details</h3>
                                 <div className="text-sm space-y-1">
-                                    <p><span className="text-muted-foreground">DOB:</span> {appointment.patients?.date_of_birth}</p>
-                                    <p><span className="text-muted-foreground">Gender:</span> {appointment.patients?.gender}</p>
+                                    <p><span className="text-muted-foreground">DOB:</span> {appointment?.patients?.date_of_birth}</p>
+                                    <p><span className="text-muted-foreground">Gender:</span> {appointment?.patients?.gender}</p>
                                 </div>
                             </div>
 
@@ -390,18 +388,18 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
             <OCRReportUpload
                 open={showOCR}
                 onClose={() => setShowOCR(false)}
-                patientId={appointment.patients?.id || appointment.patient_id}
+                patientId={appointment?.patients?.id || appointment?.patient_id}
                 patientName={patientName}
-                appointmentId={appointment.id}
+                appointmentId={appointment?.id}
             />
 
             {/* Voice Recorder Modal */}
             <VoiceRecorder
                 open={showVoice}
                 onClose={() => setShowVoice(false)}
-                patientId={appointment.patients?.id || appointment.patient_id}
+                patientId={appointment?.patients?.id || appointment?.patient_id}
                 patientName={patientName}
-                appointmentId={appointment.id}
+                appointmentId={appointment?.id}
             />
         </>
     )

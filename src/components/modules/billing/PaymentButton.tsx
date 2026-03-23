@@ -41,7 +41,7 @@ export function PaymentButton({ patientId, amount, description, onSuccess, class
             key: res.keyId, // Key ID from server
             amount: res.amount,
             currency: res.currency,
-            name: 'HIS Core Hospital',
+            name: 'CareBridge Hospital',
             description: description,
             order_id: res.orderId,
             handler: function (response: any) {

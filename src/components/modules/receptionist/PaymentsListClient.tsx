@@ -29,7 +29,7 @@ export function PaymentsListClient({ payments }: PaymentsListClientProps) {
 
         // Header
         doc.setFontSize(20)
-        doc.text('HIS Core - Payment Receipt', 20, 20)
+            doc.text('CareBridge - Payment Receipt', 20, 20)
 
         doc.setFontSize(12)
         doc.text(`Invoice #: ${payment.invoice_number}`, 20, 35)
@@ -77,7 +77,7 @@ export function PaymentsListClient({ payments }: PaymentsListClientProps) {
 
         // Footer
         doc.setFontSize(9)
-        doc.text('Thank you for choosing HIS Core', 105, 280, { align: 'center' })
+        doc.text('Thank you for choosing CareBridge', 105, 280, { align: 'center' })
 
         doc.save(`receipt_${payment.invoice_number}.pdf`)
         toast.success('PDF downloaded!')

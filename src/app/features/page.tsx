@@ -9,7 +9,7 @@ export default function FeaturesPage() {
                 <div className="max-w-4xl mx-auto text-center">
                     <h1 className="text-4xl font-bold mb-6">Powerful Features for Modern Healthcare</h1>
                     <p className="text-xl text-muted-foreground mb-12">
-                        Discover how HIS Core transforms hospital operations with our comprehensive suite of tools.
+                        Discover how CareBridge transforms hospital operations with our comprehensive suite of tools.
                     </p>
                     {/* Add more content here as needed */}
                     <div className="grid md:grid-cols-2 gap-8 text-left">

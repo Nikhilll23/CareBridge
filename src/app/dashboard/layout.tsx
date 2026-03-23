@@ -22,8 +22,8 @@ export default async function DashboardLayout({
   const userProfile = await syncUser()
 
   if (!userProfile) {
-    // If sync fails, redirect to sign-in
-    console.error('Failed to sync user profile')
+    // If sync fails, still allow access with basic clerk info
+    console.error('Failed to sync user profile - check Supabase connection and run MASTER-SETUP.sql')
     redirect('/sign-in')
   }
 

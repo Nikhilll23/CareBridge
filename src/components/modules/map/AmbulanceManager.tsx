@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { updateAmbulanceStatus, deleteAmbulance } from '@/actions/ambulance'
 import { toast } from 'sonner'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Ambulance } from '@/types/admin'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -28,12 +28,6 @@ interface AmbulanceManagerProps {
 
 export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps) {
     const [updatingId, setUpdatingId] = useState<string | null>(null)
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
-
 
     const handleStatusChange = async (id: string, newStatus: 'AVAILABLE' | 'BUSY' | 'MAINTENANCE') => {
         setUpdatingId(id)
@@ -49,17 +43,6 @@ export function AmbulanceManager({ ambulances, userRole }: AmbulanceManagerProps
         } finally {
             setUpdatingId(null)
         }
-    }
-
-    if (!mounted) {
-        return (
-            <Card className="h-[600px] flex items-center justify-center text-muted-foreground bg-muted/5">
-                <div className="flex flex-col items-center">
-                    <Loader2 className="h-6 w-6 animate-spin mb-2" />
-                    <span>Loading fleet...</span>
-                </div>
-            </Card>
-        )
     }
 
     return (

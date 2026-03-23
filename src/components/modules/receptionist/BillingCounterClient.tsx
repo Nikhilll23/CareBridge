@@ -150,7 +150,7 @@ export function BillingCounterClient() {
 
         // Header
         doc.setFontSize(20)
-        doc.text('HIS Core - Hospital Invoice', 20, 20)
+        doc.text('CareBridge - Hospital Invoice', 20, 20)
 
         doc.setFontSize(12)
         doc.text(`Invoice #: ${payment.invoice_number}`, 20, 35)
@@ -206,7 +206,7 @@ export function BillingCounterClient() {
 
         // Footer
         doc.setFontSize(9)
-        doc.text('Thank you for choosing HIS Core', 105, 280, { align: 'center' })
+        doc.text('Thank you for choosing CareBridge', 105, 280, { align: 'center' })
 
         doc.save(`invoice_${payment.invoice_number}.pdf`)
     }

@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { RadiologyDashboard } from './RadiologyDashboard'
 
 export const metadata = {
-  title: 'Radiology & Imaging | HIS Core',
+  title: 'Radiology & Imaging | CareBridge',
   description: 'Medical imaging and radiology reports management',
 }
 

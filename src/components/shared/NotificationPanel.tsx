@@ -65,10 +65,7 @@ export function NotificationPanel() {
         setLoading(false)
     }, [])
 
-    const [mounted, setMounted] = useState(false)
-
     useEffect(() => {
-        setMounted(true)
         fetchNotifications()
 
         // Poll for new notifications every 30 seconds
@@ -133,8 +130,6 @@ export function NotificationPanel() {
             setOpen(false)
         }
     }
-
-    if (!mounted) return null
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

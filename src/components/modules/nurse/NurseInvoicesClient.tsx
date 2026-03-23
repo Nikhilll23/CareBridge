@@ -27,8 +27,7 @@ export function NurseInvoicesClient() {
                 .from('payments')
                 .select(`
                     *,
-                    patient:patients(first_name, last_name),
-                    receptionist:users!payments_receptionist_id_fkey(first_name, last_name)
+                    patient:patients(first_name, last_name)
                 `)
                 .order('created_at', { ascending: false })
                 .limit(100)
@@ -130,8 +129,8 @@ export function NurseInvoicesClient() {
                                                     Paid
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-sm">
-                                                {invoice.receptionist?.first_name} {invoice.receptionist?.last_name}
+                                            <TableCell className="text-sm text-muted-foreground">
+                                                {invoice.receptionist_id ? invoice.receptionist_id.slice(0, 8) + '...' : 'N/A'}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-2">

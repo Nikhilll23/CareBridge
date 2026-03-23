@@ -64,13 +64,11 @@ export function Footer() {
 				<div className="max-w-7xl mx-auto flex flex-col gap-12 xl:flex-row xl:justify-between xl:items-start">
 					<AnimatedContainer className="space-y-2 flex flex-col items-start justify-start xl:flex-shrink-0">
 						<div className="flex items-center gap-2">
-							<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-								<span className="text-xs font-bold text-primary-foreground">H</span>
-							</div>
-							<span className="font-bold">HIS Core</span>
+							<img src="/carebridge-logo.png" alt="CareBridge" className="h-8 w-8 object-contain rounded-md" />
+							<span className="font-bold">CareBridge</span>
 						</div>
 						<p className="text-muted-foreground text-xs">
-							© {new Date().getFullYear()} HIS Core. All rights reserved.
+							© {new Date().getFullYear()} CareBridge. All rights reserved.
 						</p>
 					</AnimatedContainer>
 

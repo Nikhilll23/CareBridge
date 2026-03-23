@@ -79,7 +79,7 @@ export function DoctorReportsClient({ reports }: DoctorReportsClientProps) {
             doc.setPage(i)
             doc.setFontSize(10)
             doc.text(`Page ${i} of ${pageCount}`, 20, 285)
-            doc.text('HIS Core - Hospital Information System', 130, 285)
+            doc.text('CareBridge', 130, 285)
         }
 
         return doc

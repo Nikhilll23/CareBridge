@@ -3,9 +3,10 @@ import { RosterManager } from '@/components/modules/roster/RosterManager'
 import { supabaseAdmin } from '@/lib/supabase'
 import { currentUser } from '@clerk/nextjs/server'
 
-export default async function DutyRosterPage({ searchParams }: { searchParams: { date?: string } }) {
+export default async function DutyRosterPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const user = await currentUser()
-  const dateStr = searchParams?.date
+  const resolvedParams = await searchParams
+  const dateStr = resolvedParams?.date
   const queryDate = dateStr ? new Date(dateStr) : new Date()
 
   // Check admin status for edit permission

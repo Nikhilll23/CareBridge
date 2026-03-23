@@ -36,22 +36,32 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
     // console.log('Syncing user:', { userId, email, firstName, lastName })
 
     // Determine role based on email rules
-    let role = 'PATIENT' // Default
+    let role = 'PATIENT' // Default — any unknown email is a patient
     const lowerEmail = email.toLowerCase()
 
-    // Whitelist of Admin Emails
     // Whitelist of Admin Emails
     const ADMIN_EMAILS = [
       'omarhashmi494@gmail.com',
       '210rajdeep@gmail.com',
       'kaustubh.neoge@somaiya.edu',
-      'ayush.s1@somaiya.edu'
+      'ayush.s1@somaiya.edu',
+      'nikhilchandorkar594@gmail.com',
+    ]
+
+    // Whitelist of Doctor Emails
+    const DOCTOR_EMAILS = [
+      'vu1f2223065@pvppcoe.ac.in',
+      'vu1f2223139@pvppcoe.ac.in',
+      'vu1f2223123@pvppcoe.ac.in',
+      'vu1f2223167@pvppcoe.ac.in',
     ]
 
     if (ADMIN_EMAILS.includes(email)) {
       role = 'ADMIN'
-    } else if (lowerEmail.startsWith('dr.') && lowerEmail.endsWith('@gmail.com')) {
+    } else if (DOCTOR_EMAILS.includes(email)) {
       role = 'DOCTOR'
+    } else if (lowerEmail.startsWith('nurse.') || lowerEmail.includes('nurse')) {
+      role = 'NURSE'
     }
 
     // Check if user exists in Supabase
@@ -63,31 +73,20 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       // PGRST116 = not found, which is expected for new users
-      console.error('Error fetching user from Supabase:', {
-        message: fetchError.message,
-        code: fetchError.code,
-        details: fetchError.details,
-        hint: fetchError.hint
-      })
-      throw fetchError
+      console.error('Error fetching user from Supabase:', fetchError.message, '| code:', fetchError.code)
+      // Don't throw - try to create the user anyway
     }
 
     // If user exists, check if we need to update role (Enforce Admin/Doctor rules)
     if (existingUser) {
-      // Enforce role updates if email matches critical rules
       let shouldUpdate = false
-      // Admin Rule
-      // Admin Rule
       if (ADMIN_EMAILS.includes(email) && existingUser.role !== 'ADMIN') {
         shouldUpdate = true
         existingUser.role = 'ADMIN'
-      } else if (existingUser.role === 'ADMIN' && !ADMIN_EMAILS.includes(email)) {
-        // Demote unauthorized admins
+      } else if (DOCTOR_EMAILS.includes(email) && existingUser.role !== 'DOCTOR') {
         shouldUpdate = true
-        existingUser.role = 'PATIENT'
-      }
-      // Doctor Rule
-      else if (lowerEmail.startsWith('dr.') && lowerEmail.endsWith('@gmail.com') && existingUser.role !== 'DOCTOR') {
+        existingUser.role = 'DOCTOR'
+      } else if (!ADMIN_EMAILS.includes(email) && existingUser.role === 'ADMIN') {
         shouldUpdate = true
         existingUser.role = 'DOCTOR'
       }
@@ -97,35 +96,6 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
           .from('users')
           .update({ role: existingUser.role })
           .eq('id', userId)
-      }
-
-      // Ensure Patient Record Exists for PATIENT role
-      // OPTIMIZATION: Check for patient existence in parallel or skip if we have a robust flow elsewhere
-      // For now, keeping it but maybe run it asynchronously/detached if possible? 
-      // Server Actions must await, so we keep it but only run if strictly necessary.
-      if (existingUser.role === 'PATIENT') {
-        // Optimization: Maybe only check if we suspect missing? 
-        // Or just keep it as is, but the cache() wrapper prevents this whole block from running 5 times a page load.
-        const { data: patientCheck } = await supabaseAdmin.from('patients').select('id').eq('email', email).single()
-        if (!patientCheck) {
-          const { error: createPatientError } = await supabaseAdmin.from('patients').insert({
-            first_name: existingUser.first_name || firstName,
-            last_name: existingUser.last_name || lastName,
-            email: email,
-            gender: 'Other',
-            contact_number: 'N/A', // Placeholder
-            address: 'N/A',
-            date_of_birth: new Date().toISOString() // Placeholder
-          })
-          if (createPatientError) {
-            console.error('Failed to auto-create patient record:', createPatientError)
-          } else {
-            // Audit the auto-creation
-            // Non-blocking log? no need to await strictly if we want speed, but Vercel might kill it. 
-            // Best to await.
-            await logAuditAction('REGISTER_PATIENT', 'PATIENT', 'SYSTEM', { email, action: 'AUTO_CREATED_ON_LOGIN' })
-          }
-        }
       }
 
       return {
@@ -139,91 +109,66 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
       }
     }
 
-    // User doesn't exist, create new profile
+    // User doesn't exist by ID, upsert to handle duplicate email case
     const { data: newUser, error: insertError } = await supabaseAdmin
       .from('users')
-      .insert({
-        id: userId,  // Clerk ID is used directly as the primary key
+      .upsert({
+        id: userId,
         email: email,
         first_name: firstName,
         last_name: lastName,
         role: role,
-      })
+      }, { onConflict: 'email', ignoreDuplicates: false })
       .select()
       .single()
 
     if (insertError) {
-      console.error('Error creating user in Supabase:', {
-        message: insertError.message,
-        code: insertError.code,
-        details: insertError.details,
-        hint: insertError.hint
-      })
+      // Last resort: fetch by email
+      const { data: existingByEmail } = await supabaseAdmin
+        .from('users').select('*').eq('email', email).single()
 
-      // If it's a duplicate key error, the user already exists
-      if (insertError.code === '23505') {
-        // Try fetching the existing user by id or email
-        const { data: existingById } = await supabaseAdmin
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .single()
-
-        if (existingById) {
-          return {
-            id: existingById.id,
-            email: existingById.email,
-            firstName: existingById.first_name || '',
-            lastName: existingById.last_name || '',
-            fullName: `${existingById.first_name || ''} ${existingById.last_name || ''}`.trim(),
-            role: existingById.role,
-            createdAt: new Date(existingById.created_at),
-          }
-        }
-
-        // Try by email if id lookup failed
-        const { data: existingByEmail } = await supabaseAdmin
-          .from('users')
-          .select('*')
-          .eq('email', email)
-          .single()
-
-        if (existingByEmail) {
-          return {
-            id: existingByEmail.id,
-            email: existingByEmail.email,
-            firstName: existingByEmail.first_name || '',
-            lastName: existingByEmail.last_name || '',
-            fullName: `${existingByEmail.first_name || ''} ${existingByEmail.last_name || ''}`.trim(),
-            role: existingByEmail.role,
-            createdAt: new Date(existingByEmail.created_at),
-          }
+      if (existingByEmail) {
+        // Update the ID to match current Clerk user
+        await supabaseAdmin.from('users').update({ id: userId, role: role }).eq('email', email)
+        return {
+          id: userId, email: existingByEmail.email,
+          firstName: existingByEmail.first_name || '', lastName: existingByEmail.last_name || '',
+          fullName: `${existingByEmail.first_name || ''} ${existingByEmail.last_name || ''}`.trim(),
+          role: role as any, createdAt: new Date(existingByEmail.created_at),
         }
       }
-
-      throw insertError
-    }
-
-    // Auto-create Patient Record for new PATIENT users
-    if (role === 'PATIENT') {
-      const { error: createPatientError } = await supabaseAdmin.from('patients').insert({
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        gender: 'Other',
-        contact_number: 'N/A',
-        address: 'N/A',
-        date_of_birth: new Date().toISOString()
-      })
-      if (createPatientError) {
-        console.error('Failed to auto-create patient record:', createPatientError)
-      } else {
-        await logAuditAction('REGISTER_PATIENT', 'PATIENT', 'SYSTEM', { email, action: 'AUTO_CREATED_ON_SIGNUP' })
+      // Fallback — return profile from Clerk data so user isn't stuck
+      return {
+        id: userId, email: email,
+        firstName: firstName, lastName: lastName,
+        fullName: `${firstName} ${lastName}`.trim(),
+        role: role as any, createdAt: new Date(),
       }
     }
 
-    // Audit Login
-    await logAuditAction('USER_LOGIN', 'AUTH', newUser.id, { email: newUser.email, role: newUser.role, isNewUser: true })
+    // If new user is a PATIENT, auto-create their patient record
+    if (newUser.role === 'PATIENT') {
+      const { data: existingPatient } = await supabaseAdmin
+        .from('patients')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+      if (!existingPatient) {
+        await supabaseAdmin.from('patients').insert({
+          first_name: firstName || email.split('@')[0],
+          last_name: lastName || '',
+          email: email,
+          contact_number: '',
+          address: '',
+          date_of_birth: null,
+          gender: 'Other',
+        })
+      }
+    }
+
+    // Audit Login (non-blocking)
+    logAuditAction('USER_LOGIN', 'AUTH', newUser.id, { email: newUser.email, role: newUser.role, isNewUser: true })
 
     return {
       id: newUser.id,

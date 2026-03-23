@@ -9,7 +9,7 @@ export default function IntegrationPage() {
                 <div className="max-w-4xl mx-auto py-12 text-center">
                     <h1 className="text-4xl font-bold mb-8">Seamless Integrations</h1>
                     <p className="text-xl text-muted-foreground mb-12">
-                        Connect HIS Core with your favorite tools and devices.
+                        Connect CareBridge with your favorite tools and devices.
                     </p>
                     <div className="grid md:grid-cols-3 gap-6">
                         <div className="p-8 border rounded-xl bg-card flex flex-col items-center">

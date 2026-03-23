@@ -34,7 +34,7 @@ export default function ChangelogPage() {
                             <div className="absolute -left-[39px] h-5 w-5 rounded-full bg-muted border-4 border-background"></div>
                             <div className="text-sm text-muted-foreground mb-1">v1.0.0 - August 1, 2025</div>
                             <h3 className="text-2xl font-bold mb-4">Initial Release</h3>
-                            <p className="text-muted-foreground">Public launch of HIS Core.</p>
+                            <p className="text-muted-foreground">Public launch of CareBridge.</p>
                         </div>
                     </div>
                 </div>

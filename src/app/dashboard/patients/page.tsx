@@ -31,7 +31,7 @@ export default async function PatientsPage() {
         {/* Add New Patient Button - Admin/Receptionist only */}
         {(userRole === 'ADMIN' || userRole === 'RECEPTIONIST' || userRole === 'NURSE') && (
           <AddPatientDialog>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+            <button suppressHydrationWarning className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
               <UserPlus className="h-4 w-4" />
               Add New Patient
             </button>

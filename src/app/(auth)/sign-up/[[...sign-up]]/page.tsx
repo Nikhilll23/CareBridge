@@ -2,13 +2,13 @@ import { SignUp } from '@clerk/nextjs'
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a2e1a 100%)'}}>
       <div className="w-full max-w-md p-8">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-            Hospital Information System
+          <h1 className="text-3xl font-bold text-white mb-2">
+            CareBridge
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-gray-300">
             Create an account to get started
           </p>
         </div>

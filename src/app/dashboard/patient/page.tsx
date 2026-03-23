@@ -2,6 +2,7 @@ import { getPatientPortalData } from '@/actions/patient-portal'
 import { QuickBook } from '@/components/modules/patient/QuickBook'
 import { SymptomLogger } from '@/components/modules/patient/SymptomLogger'
 import { PatientPaymentSection } from '@/components/modules/patient/PatientPaymentSection'
+import { PrescriptionCard } from '@/components/modules/patient/PrescriptionCard'
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,7 +35,7 @@ export default async function PatientDashboard() {
         )
     }
 
-    const { patient, todaysAppointments, futureAppointments, past, totalDue, availableDoctors, invoices } = data
+    const { patient, todaysAppointments, futureAppointments, past, totalDue, availableDoctors, invoices, prescriptions, medicalReports, handwrittenNotes } = data
     const nextFutureVisit = futureAppointments[0]
 
     console.log('--- Patient Dashboard Debug ---')
@@ -61,7 +62,7 @@ export default async function PatientDashboard() {
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                             <Calendar className="h-5 w-5" />
-                            Today's Appointments {todaysAppointments.length > 0 && `(${todaysAppointments.length})`}
+                            All Appointments {todaysAppointments.length > 0 && `(${todaysAppointments.length})`}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -111,8 +112,9 @@ export default async function PatientDashboard() {
                 {/* Overview Tabs */}
                 <div className="md:col-span-2">
                     <Tabs defaultValue="appointments" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="appointments">My History</TabsTrigger>
+                            <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
                             <TabsTrigger value="overview">Medical Profile</TabsTrigger>
                             <TabsTrigger value="documents">Documents</TabsTrigger>
                         </TabsList>
@@ -120,28 +122,38 @@ export default async function PatientDashboard() {
                         <TabsContent value="appointments" className="mt-4 space-y-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base">Recent Visits</CardTitle>
+                                    <CardTitle className="text-base">Past Visits</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        {past.length === 0 ? (
+                                        {todaysAppointments.filter((a: any) => a.status === 'COMPLETED').length === 0 ? (
                                             <p className="text-sm text-muted-foreground">No past records found.</p>
                                         ) : (
-                                            past.map((appt: any) => (
-                                                <div key={appt.id} className="flex justify-between items-center border-b last:border-0 pb-3 last:pb-0">
-                                                    <div>
-                                                        <p className="font-medium">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
-                                                        <p className="text-sm text-muted-foreground">{appt.reason || 'Routine Visit'}</p>
+                                            todaysAppointments
+                                                .filter((a: any) => a.status === 'COMPLETED')
+                                                .map((appt: any) => (
+                                                    <div key={appt.id} className="flex justify-between items-center border-b last:border-0 pb-3 last:pb-0">
+                                                        <div>
+                                                            <p className="font-medium">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
+                                                            <p className="text-sm text-muted-foreground">{appt.reason || 'Routine Visit'}</p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {appt.doctor ? `Dr. ${appt.doctor.first_name} ${appt.doctor.last_name}` : ''}
+                                                            </p>
+                                                        </div>
+                                                        <Badge variant="outline" className="text-green-600 border-green-600">Completed</Badge>
                                                     </div>
-                                                    <div className="text-sm font-medium">
-                                                        {appt.status}
-                                                    </div>
-                                                </div>
-                                            ))
+                                                ))
                                         )}
                                     </div>
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+
+                        <TabsContent value="prescriptions" className="mt-4">
+                            <PrescriptionCard
+                                prescriptions={prescriptions}
+                                patientName={`${patient.first_name} ${patient.last_name}`}
+                            />
                         </TabsContent>
 
                         <TabsContent value="overview" className="mt-4">
@@ -169,12 +181,64 @@ export default async function PatientDashboard() {
                         </TabsContent>
 
                         <TabsContent value="documents" className="mt-4">
-                            <Card>
-                                <CardContent className="p-8 text-center text-muted-foreground">
-                                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                    <p>No documents available yet.</p>
-                                </CardContent>
-                            </Card>
+                            <div className="space-y-4">
+                                {/* Medical Reports */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <FileText className="h-4 w-4" /> Medical Reports
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {medicalReports.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground">No reports sent yet.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {medicalReports.map((r: any) => (
+                                                    <div key={r.id} className="flex justify-between items-center border-b last:border-0 pb-3 last:pb-0">
+                                                        <div>
+                                                            <p className="font-medium">{r.title || r.report_type}</p>
+                                                            <p className="text-xs text-muted-foreground">{format(new Date(r.created_at), 'MMM d, yyyy')}</p>
+                                                        </div>
+                                                        {r.file_url && (
+                                                            <a href={r.file_url} target="_blank" rel="noreferrer">
+                                                                <Button size="sm" variant="outline">View</Button>
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Handwritten Notes */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <Activity className="h-4 w-4" /> Doctor's Notes
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {handwrittenNotes.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground">No notes available.</p>
+                                        ) : (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                {handwrittenNotes.map((note: any) => (
+                                                    <div key={note.id} className="border rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                                                        onClick={() => window.open(note.image_data, '_blank')}>
+                                                        <img src={note.image_data} alt={note.title} className="w-full h-28 object-cover" />
+                                                        <div className="p-2">
+                                                            <p className="text-xs font-medium truncate">{note.title || note.note_type}</p>
+                                                            <p className="text-xs text-muted-foreground">{format(new Date(note.created_at), 'MMM d, yyyy')}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </TabsContent>
                     </Tabs>
                 </div>

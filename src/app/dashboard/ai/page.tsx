@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'AI Assistant - HIS Core',
+  title: 'AI Assistant - CareBridge',
   description: 'Your intelligent medical assistant'
 }
 

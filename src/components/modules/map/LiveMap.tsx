@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -35,14 +35,7 @@ function MapUpdater({ center }: { center: [number, number] }) {
 }
 
 export default function LiveMap({ ambulances, patients }: LiveMapProps) {
-    const [mounted, setMounted] = useState(false)
     const defaultCenter: [number, number] = [19.0760, 72.8777] // Mumbai
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
-
-    if (!mounted) return <div className="h-full w-full bg-muted/20 animate-pulse" />
 
     return (
         <MapContainer center={defaultCenter} zoom={13} style={{ height: '100%', width: '100%' }}>

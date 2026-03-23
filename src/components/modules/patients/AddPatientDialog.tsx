@@ -133,7 +133,7 @@ export function AddPatientDialog({ children }: AddPatientDialogProps) {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" suppressHydrationWarning>
               {/* ID Verification Scanner */}
               <div className="space-y-2">
                 <FormLabel className="font-semibold text-primary">Step 1: ID Verification (Automated)</FormLabel>

@@ -10,11 +10,11 @@ export default function TestimonialsPage() {
                     <h1 className="text-4xl font-bold mb-8">What Our Customers Say</h1>
                     <div className="grid md:grid-cols-2 gap-6 text-left">
                         <div className="p-6 border rounded-xl bg-card">
-                            <p className="italic mb-4">"HIS Core transformed our hospital workflow overnight. The nurse station module is a game changer."</p>
+                            <p className="italic mb-4">"CareBridge transformed our hospital workflow overnight. The nurse station module is a game changer."</p>
                             <div className="font-bold">- Dr. Sarah, Chief of Medicine</div>
                         </div>
                         <div className="p-6 border rounded-xl bg-card">
-                            <p className="italic mb-4">"Billing errors dropped by 90% after we switched to HIS Core. Highly recommended."</p>
+                            <p className="italic mb-4">"Billing errors dropped by 90% after we switched to CareBridge. Highly recommended."</p>
                             <div className="font-bold">- Mark, Hospital Administrator</div>
                         </div>
                         <div className="p-6 border rounded-xl bg-card">

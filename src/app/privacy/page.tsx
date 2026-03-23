@@ -9,7 +9,7 @@ export default function PrivacyPage() {
                 <div className="max-w-4xl mx-auto py-12 prose dark:prose-invert">
                     <h1 className="text-4xl font-bold mb-8 text-center">Privacy Policy</h1>
                     <p>Last updated: January 2026</p>
-                    <p>Your privacy is important to us. It is HIS Core's policy to respect your privacy regarding any information we may collect from you across our website and application.</p>
+                    <p>Your privacy is important to us. It is CareBridge's policy to respect your privacy regarding any information we may collect from you across our website and application.</p>
                     <h3>1. Information We Collect</h3>
                     <p>We may ask for personal information, such as your name, email, and phone number, when you register for an account or request a demo.</p>
                     <h3>2. Use of Data</h3>
