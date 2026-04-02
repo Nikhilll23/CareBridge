@@ -52,7 +52,7 @@ export async function createReferral(data: {
         revalidatePath('/dashboard/doctor')
         return { success: true }
     } catch (error: any) {
-        console.error('Create referral error:', error)
+        console.warn('Create referral error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -117,7 +117,7 @@ export async function getReferrals(role: 'PATIENT' | 'DOCTOR') {
 
         return { success: true, data: referrals }
     } catch (error: any) {
-        console.error('Get referrals error:', error)
+        console.warn('Get referrals error:', error)
         return { success: false, error: error.message }
     }
 }

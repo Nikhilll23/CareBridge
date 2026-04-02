@@ -43,7 +43,7 @@ export async function updateAmbulanceStatus(id: string, status: 'AVAILABLE' | 'B
         revalidatePath('/dashboard/admin/map')
         return { success: true }
     } catch (error) {
-        console.error('Error updating ambulance:', error)
+        console.warn('Error updating ambulance:', error)
         return { success: false, error: 'Failed to update status' }
     }
 }
@@ -85,7 +85,7 @@ export async function deleteAmbulance(id: string) {
         revalidatePath('/dashboard/admin/map')
         return { success: true }
     } catch (error) {
-        console.error('Error deleting ambulance:', error)
+        console.warn('Error deleting ambulance:', error)
         return { success: false, error: 'Failed to delete ambulance' }
     }
 }

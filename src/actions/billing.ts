@@ -62,7 +62,7 @@ export async function generateFinalBill(patientId: string) {
         }
 
     } catch (error: any) {
-        console.error('Bill Gen Error:', error)
+        console.warn('Bill Gen Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -192,7 +192,7 @@ export async function createPaymentOrder(patientId: string, amount: number, desc
             keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
         }
     } catch (error: any) {
-        console.error('Payment Init Error:', error)
+        console.warn('Payment Init Error:', error)
         return { success: false, error: 'Payment Initialization Failed' }
     }
 }

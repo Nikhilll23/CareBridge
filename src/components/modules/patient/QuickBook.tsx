@@ -28,7 +28,9 @@ interface QuickBookProps {
 export function QuickBook({ doctors = [] }: QuickBookProps) {
     const [date, setDate] = useState<Date>()
     const [calendarOpen, setCalendarOpen] = useState(false)
-    const [time, setTime] = useState('09:00')
+    const [timeHour, setTimeHour] = useState('9')
+    const [timeMin, setTimeMin] = useState('00')
+    const [timeAmPm, setTimeAmPm] = useState('AM')
     const [reason, setReason] = useState('')
     const [doctorId, setDoctorId] = useState<string>()
     const [loading, setLoading] = useState(false)
@@ -39,10 +41,12 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
             return
         }
 
-        // Combine date + time into a single ISO string
-        const [hours, minutes] = time.split(':').map(Number)
+        // Convert 12h → 24h
+        let hours = parseInt(timeHour)
+        if (timeAmPm === 'AM' && hours === 12) hours = 0
+        if (timeAmPm === 'PM' && hours !== 12) hours += 12
         const combined = new Date(date)
-        combined.setHours(hours, minutes, 0, 0)
+        combined.setHours(hours, parseInt(timeMin), 0, 0)
 
         setLoading(true)
         try {
@@ -57,7 +61,9 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
                 setReason('')
                 setDoctorId(undefined)
                 setDate(undefined)
-                setTime('09:00')
+                setTimeHour('9')
+                setTimeMin('00')
+                setTimeAmPm('AM')
             } else {
                 toast.error(res.error || 'Failed to book')
             }
@@ -103,12 +109,49 @@ export function QuickBook({ doctors = [] }: QuickBookProps) {
 
                 <div className="space-y-2">
                     <Label>Preferred Time</Label>
-                    <input
-                        type="time"
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
+                    <div className="flex items-center gap-2">
+                        <Select
+                            value={timeHour}
+                            onValueChange={(v) => setTimeHour(v)}
+                        >
+                            <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Hour" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[1,2,3,4,5,6,7,8,9,10,11,12].map(h => (
+                                    <SelectItem key={h} value={String(h)}>{h}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <span className="text-muted-foreground font-medium">:</span>
+
+                        <Select
+                            value={timeMin}
+                            onValueChange={(v) => setTimeMin(v)}
+                        >
+                            <SelectTrigger className="w-20">
+                                <SelectValue placeholder="Min" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="00">00</SelectItem>
+                                <SelectItem value="30">30</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            value={timeAmPm}
+                            onValueChange={(v) => setTimeAmPm(v)}
+                        >
+                            <SelectTrigger className="w-20">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="AM">AM</SelectItem>
+                                <SelectItem value="PM">PM</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 <div className="space-y-2">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,18 +11,68 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner'
 import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
+import { getInventory } from '@/actions/inventory'
 
 export function NursePharmacyClient({ role = 'nurse' }: { role?: 'nurse' | 'receptionist' }) {
     const [searchQuery, setSearchQuery] = useState('')
-    // ...
-    // const cartLink = role === 'receptionist' ? '/dashboard/receptionist/cart' : '/dashboard/nurse/cart' 
-    // ^ Removed cart link for receptionist as requested
-
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [patientSearch, setPatientSearch] = useState('')
     const [selectedPatient, setSelectedPatient] = useState<any>(null)
     const [patientResults, setPatientResults] = useState<any[]>([])
+
+    // Inventory dropdown state
+    const [inventory, setInventory] = useState<any[]>([])
+    const [showDropdown, setShowDropdown] = useState(false)
+    const [filteredInventory, setFilteredInventory] = useState<any[]>([])
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Load inventory on mount
+    useEffect(() => {
+        getInventory().then(res => {
+            // getInventory returns a plain array
+            if (Array.isArray(res)) setInventory(res)
+        })
+    }, [])
+
+    // Filter inventory as user types
+    useEffect(() => {
+        if (searchQuery.trim().length >= 1) {
+            const filtered = inventory.filter(item =>
+                item.item_name.toLowerCase().includes(searchQuery.toLowerCase())
+            ).slice(0, 8)
+            setFilteredInventory(filtered)
+            setShowDropdown(filtered.length > 0)
+        } else {
+            setShowDropdown(false)
+        }
+    }, [searchQuery, inventory])
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClick)
+        return () => document.removeEventListener('mousedown', handleClick)
+    }, [])
+
+    const handleSelectFromInventory = (item: any) => {
+        setSearchQuery(item.item_name)
+        setShowDropdown(false)
+        // Directly add to results from local inventory
+        setSearchResults([{
+            id: item.id,
+            name: item.item_name,
+            genericName: item.generic_name || item.strength || 'N/A',
+            manufacturer: item.manufacturer || 'N/A',
+            price: item.unit_price || 0,
+            stock: item.stock_quantity,
+            fromInventory: true
+        }])
+    }
 
     // We don't use the client context anymore for Receptionist add-to-cart in this new flow
     // const { addToCart, cart } = useCart() 
@@ -183,16 +233,45 @@ export function NursePharmacyClient({ role = 'nurse' }: { role?: 'nurse' | 'rece
                     <CardDescription>Search for medications from FDA database</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex gap-2">
-                        <Input
-                            placeholder="Enter medicine name..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && searchMedicines()}
-                        />
+                    <div className="flex gap-2" ref={dropdownRef}>
+                        <div className="relative flex-1">
+                            <Input
+                                placeholder="Enter medicine name..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && searchMedicines()}
+                                onFocus={() => filteredInventory.length > 0 && setShowDropdown(true)}
+                            />
+                            {/* Local Inventory Dropdown */}
+                            {showDropdown && (
+                                <div className="absolute top-full left-0 right-0 z-50 bg-popover border rounded-md shadow-lg mt-1 max-h-[250px] overflow-y-auto">
+                                    <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b bg-muted/50">
+                                        Available in Inventory
+                                    </div>
+                                    {filteredInventory.map(item => (
+                                        <div
+                                            key={item.id}
+                                            className="flex items-center justify-between px-3 py-2 hover:bg-accent cursor-pointer text-sm border-b last:border-0"
+                                            onMouseDown={() => handleSelectFromInventory(item)}
+                                        >
+                                            <div>
+                                                <div className="font-medium">{item.item_name}</div>
+                                                <div className="text-xs text-muted-foreground">{item.strength} • {item.dosage_form}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-xs font-medium">₹{item.unit_price?.toFixed(2)}</div>
+                                                <Badge variant={item.stock_quantity > item.low_stock_threshold ? 'secondary' : 'destructive'} className="text-[10px] h-4">
+                                                    Stock: {item.stock_quantity}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                         <Button onClick={searchMedicines} disabled={loading}>
                             <Search className="h-4 w-4 mr-2" />
-                            {loading ? 'Searching...' : 'Search'}
+                            {loading ? 'Searching...' : 'Search FDA'}
                         </Button>
                     </div>
 
@@ -205,6 +284,7 @@ export function NursePharmacyClient({ role = 'nurse' }: { role?: 'nurse' | 'rece
                                         <TableHead>Generic Name</TableHead>
                                         <TableHead>Manufacturer</TableHead>
                                         <TableHead>Price</TableHead>
+                                        <TableHead>Stock</TableHead>
                                         <TableHead>Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -214,10 +294,19 @@ export function NursePharmacyClient({ role = 'nurse' }: { role?: 'nurse' | 'rece
                                             <TableCell className="font-medium">{medicine.name}</TableCell>
                                             <TableCell>{medicine.genericName || 'N/A'}</TableCell>
                                             <TableCell className="text-sm">{medicine.manufacturer || 'N/A'}</TableCell>
-                                            <TableCell>${medicine.price.toFixed(2)}</TableCell>
+                                            <TableCell>₹{medicine.price.toFixed(2)}</TableCell>
+                                            <TableCell>
+                                                {medicine.fromInventory ? (
+                                                    <Badge variant={medicine.stock > 0 ? 'secondary' : 'destructive'}>
+                                                        {medicine.stock > 0 ? `${medicine.stock} units` : 'Out of Stock'}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline">FDA</Badge>
+                                                )}
+                                            </TableCell>
                                             <TableCell>
                                                 {role === 'receptionist' && (
-                                                    <Button size="sm" onClick={() => handleAddToCart(medicine)}>
+                                                    <Button size="sm" onClick={() => handleAddToCart(medicine)} disabled={medicine.fromInventory && medicine.stock === 0}>
                                                         <Plus className="h-4 w-4 mr-1" />
                                                         Add to Cart
                                                     </Button>

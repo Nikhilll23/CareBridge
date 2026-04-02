@@ -61,7 +61,7 @@ export async function getNotifications(limit: number = 20): Promise<{ data: Noti
 
         return { data: data as Notification[], error: null }
     } catch (error) {
-        console.error('Error fetching notifications:', error)
+        console.warn('Error fetching notifications:', error)
         return { data: null, error: 'Failed to fetch notifications' }
     }
 }
@@ -82,7 +82,7 @@ export async function getUnreadNotificationCount(): Promise<number> {
 
         return count || 0
     } catch (error) {
-        console.error('Error fetching unread count:', error)
+        console.warn('Error fetching unread count:', error)
         return 0
     }
 }
@@ -106,7 +106,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<{ 
         revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
-        console.error('Error marking notification as read:', error)
+        console.warn('Error marking notification as read:', error)
         return { success: false, error: 'Failed to mark as read' }
     }
 }
@@ -131,7 +131,7 @@ export async function markAllNotificationsAsRead(): Promise<{ success: boolean; 
         revalidatePath('/dashboard')
         return { success: true, count: data?.length || 0 }
     } catch (error) {
-        console.error('Error marking all as read:', error)
+        console.warn('Error marking all as read:', error)
         return { success: false, error: 'Failed to mark all as read' }
     }
 }
@@ -155,7 +155,7 @@ export async function deleteNotification(notificationId: string): Promise<{ succ
         revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
-        console.error('Error deleting notification:', error)
+        console.warn('Error deleting notification:', error)
         return { success: false, error: 'Failed to delete notification' }
     }
 }
@@ -178,7 +178,7 @@ export async function clearAllNotifications(): Promise<{ success: boolean; error
         revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
-        console.error('Error clearing notifications:', error)
+        console.warn('Error clearing notifications:', error)
         return { success: false, error: 'Failed to clear notifications' }
     }
 }
@@ -210,7 +210,7 @@ export async function createNotification(
 
         return { success: true, id: data.id }
     } catch (error) {
-        console.error('Error creating notification:', error)
+        console.warn('Error creating notification:', error)
         return { success: false, error: 'Failed to create notification' }
     }
 }
@@ -243,7 +243,7 @@ export async function createBulkNotifications(
 
         return { success: true, count: data?.length || 0 }
     } catch (error) {
-        console.error('Error creating bulk notifications:', error)
+        console.warn('Error creating bulk notifications:', error)
         return { success: false, error: 'Failed to create notifications' }
     }
 }
@@ -281,7 +281,7 @@ export async function getNotificationSettings(): Promise<{ data: NotificationSet
 
         return { data: data as NotificationSettings, error: null }
     } catch (error) {
-        console.error('Error fetching notification settings:', error)
+        console.warn('Error fetching notification settings:', error)
         return { data: null, error: 'Failed to fetch settings' }
     }
 }
@@ -315,7 +315,7 @@ export async function updateNotificationSettings(settings: {
         revalidatePath('/dashboard/settings')
         return { success: true }
     } catch (error) {
-        console.error('Error updating notification settings:', error)
+        console.warn('Error updating notification settings:', error)
         return { success: false, error: 'Failed to update settings' }
     }
 }

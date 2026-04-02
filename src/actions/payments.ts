@@ -34,7 +34,7 @@ export async function createRazorpayOrder(amount: number, currency: string = 'IN
 
         return { success: true, order }
     } catch (error: any) {
-        console.error('Error creating Razorpay order:', error)
+        console.warn('Error creating Razorpay order:', error)
         return { success: false, error: error.message || 'Failed to create order' }
     }
 }

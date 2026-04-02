@@ -11,10 +11,11 @@ import { saveHandwrittenNote, getAppointmentHandwrittenNotes } from '@/actions/h
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { HandwritingCanvas } from './HandwritingCanvas'
-import { PenLine, FileText, Clock, Trash2, Mic } from 'lucide-react'
+import { PenLine, FileText, Clock, Trash2, Mic, Plus, X, Search } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { OCRReportUpload } from './OCRReportUpload'
 import { VoiceRecorder } from './VoiceRecorder'
+import { getInventory } from '@/actions/inventory'
 
 interface ConsultationManagerProps {
     isOpen: boolean
@@ -36,32 +37,67 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const handleResize = () => {
-                setWindowSize({
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                })
-            }
-            
-            // Set initial size
-            handleResize()
-            
-            window.addEventListener('resize', handleResize)
-            return () => window.removeEventListener('resize', handleResize)
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight
+            })
         }
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
     }, [])
 
     // OCR and Voice State
     const [showOCR, setShowOCR] = useState(false)
     const [showVoice, setShowVoice] = useState(false)
 
-    // Prescription State
-    const [drugName, setDrugName] = useState('')
-    const [dosage, setDosage] = useState('')
-    const [frequency, setFrequency] = useState('')
-    const [duration, setDuration] = useState('')
-    const [instructions, setInstructions] = useState('')
+    // Prescription State — multi-medicine list
+    const [medicines, setMedicines] = useState<Array<{
+        drugName: string; dosage: string; frequency: string; duration: string; instructions: string
+    }>>([])
+    const [drugSearch, setDrugSearch] = useState('')
+    const [inventory, setInventory] = useState<any[]>([])
+    const [showDrugDropdown, setShowDrugDropdown] = useState(false)
+    const [filteredDrugs, setFilteredDrugs] = useState<any[]>([])
+    const [currentMed, setCurrentMed] = useState({ drugName: '', dosage: '', frequency: '', duration: '', instructions: '' })
+
+    // Load inventory for drug search
+    useEffect(() => {
+        getInventory().then(res => {
+            if (Array.isArray(res)) setInventory(res)
+        })
+    }, [])
+
+    // Filter drugs as user types
+    useEffect(() => {
+        if (drugSearch.trim().length >= 1) {
+            const filtered = inventory.filter(i =>
+                i.item_name.toLowerCase().includes(drugSearch.toLowerCase())
+            ).slice(0, 8)
+            setFilteredDrugs(filtered)
+            setShowDrugDropdown(filtered.length > 0)
+        } else {
+            setShowDrugDropdown(false)
+        }
+    }, [drugSearch, inventory])
+
+    const selectDrug = (item: any) => {
+        setCurrentMed(prev => ({ ...prev, drugName: item.item_name }))
+        setDrugSearch(item.item_name)
+        setShowDrugDropdown(false)
+    }
+
+    const addMedicine = () => {
+        if (!currentMed.drugName) { toast.error('Select a medicine first'); return }
+        setMedicines(prev => [...prev, { ...currentMed }])
+        setCurrentMed({ drugName: '', dosage: '', frequency: '', duration: '', instructions: '' })
+        setDrugSearch('')
+    }
+
+    const removeMedicine = (idx: number) => {
+        setMedicines(prev => prev.filter((_, i) => i !== idx))
+    }
 
     // Load existing handwritten notes
     useEffect(() => {
@@ -92,15 +128,6 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
     const handleComplete = async () => {
         setLoading(true)
         try {
-            const hasPrescription = drugName || dosage
-            const prescriptionData = hasPrescription ? {
-                drugName,
-                dosage,
-                frequency,
-                duration,
-                instructions
-            } : undefined
-
             // Save handwritten note if exists
             if (handwritingData) {
                 const noteRes = await saveHandwrittenNote({
@@ -111,16 +138,17 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                     strokeData: handwritingData.strokeData,
                     title: `${handwrittenNoteType === 'prescription' ? 'Prescription' : handwrittenNoteType === 'clinical_note' ? 'Clinical Note' : 'Diagram'} - ${appointment.patients?.first_name} ${appointment.patients?.last_name}`
                 })
-
-                if (!noteRes.success) {
-                    toast.error('Failed to save handwritten note')
-                }
+                if (!noteRes.success) toast.error('Failed to save handwritten note')
             }
 
-            const res = await updateConsultation(appointment.id, notes, prescriptionData)
+            const res = await updateConsultation(
+                appointment.id,
+                notes,
+                medicines.length > 0 ? medicines : undefined
+            )
 
             if (res.success) {
-                toast.success('Consultation completed successfully')
+                toast.success(`Consultation completed${medicines.length > 0 ? ` with ${medicines.length} medicine(s)` : ''}`)
                 onClose()
             } else {
                 toast.error('Failed to save consultation')
@@ -264,52 +292,76 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                                             <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
                                         </h3>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        {/* Added medicines list */}
+                                        {medicines.length > 0 && (
                                             <div className="space-y-2">
-                                                <Label>Drug Name</Label>
+                                                {medicines.map((med, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between bg-muted/40 rounded-md px-3 py-2 text-sm">
+                                                        <div>
+                                                            <span className="font-medium">{med.drugName}</span>
+                                                            {med.dosage && <span className="text-muted-foreground ml-2">{med.dosage}</span>}
+                                                            {med.frequency && <span className="text-muted-foreground ml-2">• {med.frequency}</span>}
+                                                            {med.duration && <span className="text-muted-foreground ml-2">• {med.duration}</span>}
+                                                        </div>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeMedicine(idx)}>
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Drug search */}
+                                        <div className="relative">
+                                            <Label>Search Medicine (from Inventory)</Label>
+                                            <div className="relative mt-1">
+                                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                                 <Input
-                                                    placeholder="e.g. Amoxicillin"
-                                                    value={drugName}
-                                                    onChange={(e) => setDrugName(e.target.value)}
+                                                    className="pl-9"
+                                                    placeholder="Type medicine name..."
+                                                    value={drugSearch}
+                                                    onChange={e => { setDrugSearch(e.target.value); setCurrentMed(p => ({ ...p, drugName: e.target.value })) }}
+                                                    onFocus={() => filteredDrugs.length > 0 && setShowDrugDropdown(true)}
                                                 />
                                             </div>
-                                            <div className="space-y-2">
+                                            {showDrugDropdown && (
+                                                <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-lg mt-1 max-h-[200px] overflow-y-auto">
+                                                    {filteredDrugs.map(item => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="flex justify-between items-center px-3 py-2 hover:bg-accent cursor-pointer text-sm border-b last:border-0"
+                                                            onMouseDown={() => selectDrug(item)}
+                                                        >
+                                                            <span className="font-medium">{item.item_name}</span>
+                                                            <span className="text-xs text-muted-foreground">Stock: {item.stock_quantity}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
                                                 <Label>Dosage</Label>
-                                                <Input
-                                                    placeholder="e.g. 500mg"
-                                                    value={dosage}
-                                                    onChange={(e) => setDosage(e.target.value)}
-                                                />
+                                                <Input placeholder="e.g. 500mg" value={currentMed.dosage} onChange={e => setCurrentMed(p => ({ ...p, dosage: e.target.value }))} />
                                             </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
+                                            <div className="space-y-1">
                                                 <Label>Frequency</Label>
-                                                <Input
-                                                    placeholder="e.g. 1-0-1"
-                                                    value={frequency}
-                                                    onChange={(e) => setFrequency(e.target.value)}
-                                                />
+                                                <Input placeholder="e.g. 1-0-1" value={currentMed.frequency} onChange={e => setCurrentMed(p => ({ ...p, frequency: e.target.value }))} />
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-1">
                                                 <Label>Duration</Label>
-                                                <Input
-                                                    placeholder="e.g. 5 days"
-                                                    value={duration}
-                                                    onChange={(e) => setDuration(e.target.value)}
-                                                />
+                                                <Input placeholder="e.g. 5 days" value={currentMed.duration} onChange={e => setCurrentMed(p => ({ ...p, duration: e.target.value }))} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Instructions</Label>
+                                                <Input placeholder="e.g. After food" value={currentMed.instructions} onChange={e => setCurrentMed(p => ({ ...p, instructions: e.target.value }))} />
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label>Instructions</Label>
-                                            <Input
-                                                placeholder="e.g. Take after food"
-                                                value={instructions}
-                                                onChange={(e) => setInstructions(e.target.value)}
-                                            />
-                                        </div>
+                                        <Button type="button" variant="outline" className="w-full" onClick={addMedicine}>
+                                            <Plus className="h-4 w-4 mr-2" /> Add Medicine
+                                        </Button>
                                     </div>
                                 </>
                             ) : (

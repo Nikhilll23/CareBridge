@@ -122,7 +122,7 @@ export async function getRadiologyReports(filters?: {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching radiology reports:', error)
+      console.warn('Error fetching radiology reports:', error)
       return { success: false, error: 'Failed to fetch reports', data: [] }
     }
 
@@ -151,7 +151,7 @@ export async function getRadiologyReports(filters?: {
 
     return { success: true, data: data as RadiologyReport[] }
   } catch (error) {
-    console.error('Error in getRadiologyReports:', error)
+    console.warn('Error in getRadiologyReports:', error)
     return { success: false, error: 'Failed to fetch reports', data: [] }
   }
 }
@@ -212,7 +212,7 @@ export async function getRadiologyStats() {
       },
     }
   } catch (error) {
-    console.error('Error in getRadiologyStats:', error)
+    console.warn('Error in getRadiologyStats:', error)
     return { success: false, error: 'Failed to fetch stats' }
   }
 }
@@ -259,7 +259,7 @@ export async function createRadiologyReport(data: z.infer<typeof radiologyReport
       .single()
 
     if (error) {
-      console.error('Error creating radiology report:', error)
+      console.warn('Error creating radiology report:', error)
       return { success: false, error: 'Failed to create report' }
     }
 
@@ -274,7 +274,7 @@ export async function createRadiologyReport(data: z.infer<typeof radiologyReport
       }
     }
 
-    console.error('Error in createRadiologyReport:', error)
+    console.warn('Error in createRadiologyReport:', error)
     return { success: false, error: 'Failed to create report' }
   }
 }
@@ -305,14 +305,14 @@ export async function updateRadiologyStatus(id: string, status: RadiologyStatus)
       .eq('id', id)
 
     if (error) {
-      console.error('Error updating status:', error)
+      console.warn('Error updating status:', error)
       return { success: false, error: 'Failed to update status' }
     }
 
     revalidatePath('/dashboard/radiology')
     return { success: true, message: 'Status updated successfully' }
   } catch (error) {
-    console.error('Error in updateRadiologyStatus:', error)
+    console.warn('Error in updateRadiologyStatus:', error)
     return { success: false, error: 'Failed to update status' }
   }
 }
@@ -352,14 +352,14 @@ export async function updateRadiologyFindings(
       .eq('id', id)
 
     if (error) {
-      console.error('Error updating findings:', error)
+      console.warn('Error updating findings:', error)
       return { success: false, error: 'Failed to update findings' }
     }
 
     revalidatePath('/dashboard/radiology')
     return { success: true, message: 'Findings updated successfully' }
   } catch (error) {
-    console.error('Error in updateRadiologyFindings:', error)
+    console.warn('Error in updateRadiologyFindings:', error)
     return { success: false, error: 'Failed to update findings' }
   }
 }
@@ -389,7 +389,7 @@ export async function deleteRadiologyReport(id: string) {
     const { error } = await supabaseAdmin.from('radiology_reports').delete().eq('id', id)
 
     if (error) {
-      console.error('Error deleting report:', error)
+      console.warn('Error deleting report:', error)
       return { success: false, error: 'Failed to delete report' }
     }
 
@@ -405,7 +405,7 @@ export async function deleteRadiologyReport(id: string) {
     revalidatePath('/dashboard/radiology')
     return { success: true, message: 'Report deleted successfully' }
   } catch (error) {
-    console.error('Error in deleteRadiologyReport:', error)
+    console.warn('Error in deleteRadiologyReport:', error)
     return { success: false, error: 'Failed to delete report' }
   }
 }
@@ -446,7 +446,7 @@ export async function getStudyFormData() {
       }
     }
   } catch (error) {
-    console.error('Error fetching study form data:', error)
+    console.warn('Error fetching study form data:', error)
     return { success: false, error: 'Failed to load data' }
   }
 }
@@ -466,7 +466,7 @@ export async function browsePublicCollections() {
     const collections = await getCollections()
     return { success: true, data: collections.map(c => c.Collection) }
   } catch (error) {
-    console.error('Error fetching TCIA collections:', error)
+    console.warn('Error fetching TCIA collections:', error)
     return { success: false, error: 'Failed to fetch collections' }
   }
 }
@@ -497,7 +497,7 @@ export async function searchTCIAStudies(collection: string) {
 
     return { success: true, data: allStudies }
   } catch (error) {
-    console.error('Error searching TCIA studies:', error)
+    console.warn('Error searching TCIA studies:', error)
     return { success: false, error: 'Failed to search studies' }
   }
 }
@@ -530,7 +530,7 @@ export async function getTCIAStudyDetails(studyInstanceUid: string) {
       }
     }
   } catch (error) {
-    console.error('Error fetching study details:', error)
+    console.warn('Error fetching study details:', error)
     return { success: false, error: 'Failed to load details' }
   }
 }
@@ -568,7 +568,7 @@ export async function saveStudyToLocal(study: any, previewUrl?: string) {
       })
 
     if (error) {
-      console.error('DB Insert Error:', error)
+      console.warn('DB Insert Error:', error)
       throw error
     }
 
@@ -576,7 +576,7 @@ export async function saveStudyToLocal(study: any, previewUrl?: string) {
     return { success: true }
 
   } catch (error) {
-    console.error('Error saving study:', error)
+    console.warn('Error saving study:', error)
     return { success: false, error: 'Failed to save study' }
   }
 }
@@ -606,13 +606,13 @@ export async function getSavedTCIAStudies() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching saved studies:', error)
+      console.warn('Error fetching saved studies:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('Error getting saved studies:', error)
+    console.warn('Error getting saved studies:', error)
     return []
   }
 }
@@ -644,7 +644,7 @@ export async function deleteSavedStudy(studyId: string) {
       .eq('id', studyId)
 
     if (error) {
-      console.error('Error deleting study:', error)
+      console.warn('Error deleting study:', error)
       throw error
     }
 
@@ -661,7 +661,7 @@ export async function deleteSavedStudy(studyId: string) {
     revalidatePath('/dashboard/radiology')
     return { success: true }
   } catch (error) {
-    console.error('Error deleting saved study:', error)
+    console.warn('Error deleting saved study:', error)
     return { success: false, error: 'Failed to delete study' }
   }
 }

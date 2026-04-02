@@ -134,7 +134,7 @@ export async function getAppointments(filters?: {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching appointments:', error)
+      console.warn('Error fetching appointments:', error)
       return { success: false, error: 'Failed to fetch appointments', data: [] }
     }
 
@@ -164,7 +164,7 @@ export async function getAppointments(filters?: {
 
     return { success: true, data: data as Appointment[] }
   } catch (error) {
-    console.error('Error in getAppointments:', error)
+    console.warn('Error in getAppointments:', error)
     return { success: false, error: 'Failed to fetch appointments', data: [] }
   }
 }
@@ -241,7 +241,7 @@ export async function getAppointmentStats() {
       },
     }
   } catch (error) {
-    console.error('Error in getAppointmentStats:', error)
+    console.warn('Error in getAppointmentStats:', error)
     return { success: false, error: 'Failed to fetch stats' }
   }
 }
@@ -300,7 +300,7 @@ export async function createAppointment(data: z.infer<typeof appointmentSchema>)
       .single()
 
     if (error) {
-      console.error('Error creating appointment:', error)
+      console.warn('Error creating appointment:', error)
       return { success: false, error: 'Failed to create appointment' }
     }
 
@@ -328,7 +328,7 @@ export async function createAppointment(data: z.infer<typeof appointmentSchema>)
       }
     }
 
-    console.error('Error in createAppointment:', error)
+    console.warn('Error in createAppointment:', error)
     return { success: false, error: 'Failed to create appointment' }
   }
 }
@@ -361,7 +361,7 @@ export async function updateAppointmentStatus(id: string, status: AppointmentSta
       .eq('id', id)
 
     if (error) {
-      console.error('Error updating appointment status:', error)
+      console.warn('Error updating appointment status:', error)
       return { success: false, error: 'Failed to update appointment' }
     }
 
@@ -379,7 +379,7 @@ export async function updateAppointmentStatus(id: string, status: AppointmentSta
     revalidatePath('/dashboard/appointments')
     return { success: true, message: 'Appointment status updated successfully' }
   } catch (error) {
-    console.error('Error in updateAppointmentStatus:', error)
+    console.warn('Error in updateAppointmentStatus:', error)
     return { success: false, error: 'Failed to update appointment' }
   }
 }
@@ -408,7 +408,7 @@ export async function deleteAppointment(id: string) {
     const { error } = await supabaseAdmin.from('appointments').delete().eq('id', id)
 
     if (error) {
-      console.error('Error deleting appointment:', error)
+      console.warn('Error deleting appointment:', error)
       return { success: false, error: 'Failed to delete appointment' }
     }
 
@@ -424,7 +424,7 @@ export async function deleteAppointment(id: string) {
     revalidatePath('/dashboard/appointments')
     return { success: true, message: 'Appointment deleted successfully' }
   } catch (error) {
-    console.error('Error in deleteAppointment:', error)
+    console.warn('Error in deleteAppointment:', error)
     return { success: false, error: 'Failed to delete appointment' }
   }
 }
@@ -441,7 +441,7 @@ export async function getDoctors() {
       .order('first_name', { ascending: true })
 
     if (error) {
-      console.error('Error fetching doctors:', error)
+      console.warn('Error fetching doctors:', error)
       return { success: false, error: 'Failed to fetch doctors', data: [] }
     }
 
@@ -455,7 +455,7 @@ export async function getDoctors() {
 
     return { success: true, data: formattedDoctors }
   } catch (error) {
-    console.error('Error in getDoctors:', error)
+    console.warn('Error in getDoctors:', error)
     return { success: false, error: 'Failed to fetch doctors', data: [] }
   }
 }

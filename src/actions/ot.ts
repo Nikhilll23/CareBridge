@@ -222,7 +222,7 @@ export async function logConsumption(surgeryId: string, item: { name: string, ba
         revalidatePath('/dashboard/ot')
         return { success: true }
     } catch (error: any) {
-        console.error('Billing Error:', error)
+        console.warn('Billing Error:', error)
         return { success: false, error: 'Failed to bill item' }
     }
 }

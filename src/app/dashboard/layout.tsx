@@ -30,7 +30,7 @@ export default async function DashboardLayout({
   const fullName = userProfile.fullName || clerkUser.firstName || 'User'
 
   return (
-    <div className="relative flex min-h-screen">
+    <div className="relative flex min-h-screen" suppressHydrationWarning>
       {/* Sidebar - Fixed on desktop */}
       <AppSidebar
         className="hidden md:flex"
@@ -48,7 +48,7 @@ export default async function DashboardLayout({
 
         {/* Page Content */}
         <CartProvider>
-          <main className="flex-1 overflow-y-auto bg-background p-3 md:p-6 lg:p-8">
+          <main suppressHydrationWarning className="flex-1 overflow-y-auto bg-background p-3 md:p-6 lg:p-8">
             {children}
           </main>
         </CartProvider>

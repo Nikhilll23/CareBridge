@@ -27,7 +27,7 @@ export async function getEmergencyMapData() {
             patients: patients || []
         }
     } catch (error) {
-        console.error('Error fetching emergency map data:', error)
+        console.warn('Error fetching emergency map data:', error)
         return { success: false, ambulances: [], patients: [] }
     }
 }

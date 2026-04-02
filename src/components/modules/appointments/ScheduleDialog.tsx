@@ -73,7 +73,6 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     doctorId: '',
     time: '',
     reason: '',
-    reason: '',
     notes: '',
   })
 
@@ -124,7 +123,7 @@ export function ScheduleDialog({ patients, doctors, onSuccess, userRole }: Sched
     if (userRole === 'PATIENT' && patients.length === 1 && !formData.patientId) {
       setFormData(prev => ({ ...prev, patientId: patients[0].id }))
     }
-  }, [userRole, patients, open])
+  }, [userRole, patients])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

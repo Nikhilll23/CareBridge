@@ -192,7 +192,7 @@ export async function bookAppointment(data: any) {
         revalidatePath('/dashboard/doctor')
         return { success: true }
     } catch (error: any) {
-        console.error('Booking Error:', error)
+        console.warn('Booking Error:', error)
         return { success: false, error: error.message || 'Failed to book appointment' }
     }
 }
@@ -225,7 +225,7 @@ export async function logSymptom(data: { symptom: string, severity: number, note
         revalidatePath('/dashboard/patient')
         return { success: true }
     } catch (error) {
-        console.error('Symptom Log Error:', error)
+        console.warn('Symptom Log Error:', error)
         return { success: false, error: 'Failed to log symptom' }
     }
 }

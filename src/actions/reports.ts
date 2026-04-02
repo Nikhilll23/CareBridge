@@ -57,7 +57,7 @@ If any field is not present in the image, leave it as empty string or empty arra
                 parsedData = JSON.parse(jsonMatch[0])
             }
         } catch (e) {
-            console.error('JSON Parse Error:', e)
+            console.warn('JSON Parse Error:', e)
         }
 
         // Format with Groq if we have data
@@ -79,7 +79,7 @@ If any field is not present in the image, leave it as empty string or empty arra
                     formattedText = groqResponse.message
                 }
             } catch (groqError) {
-                console.error('Groq Formatting Error:', groqError)
+                console.warn('Groq Formatting Error:', groqError)
             }
         }
 
@@ -91,7 +91,7 @@ If any field is not present in the image, leave it as empty string or empty arra
         }
 
     } catch (error: any) {
-        console.error('OCR Error:', error)
+        console.warn('OCR Error:', error)
         return {
             success: false,
             error: error.message || 'Failed to process image'
@@ -124,7 +124,7 @@ Format it as a medical consultation note with clear sections if possible.`
             transcript: text
         }
     } catch (error: any) {
-        console.error('Transcription Error:', error)
+        console.warn('Transcription Error:', error)
         return {
             success: false,
             error: error.message || 'Failed to transcribe audio'
@@ -181,7 +181,7 @@ export async function createMedicalReport(data: {
         revalidatePath('/dashboard/doctor/reports')
         return { success: true, report }
     } catch (error: any) {
-        console.error('Create Report Error:', error)
+        console.warn('Create Report Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -204,7 +204,7 @@ export async function getDoctorReports() {
 
         return reports || []
     } catch (error) {
-        console.error('Get Doctor Reports Error:', error)
+        console.warn('Get Doctor Reports Error:', error)
         return []
     }
 }
@@ -236,7 +236,7 @@ export async function getPatientReports() {
 
         return reports || []
     } catch (error) {
-        console.error('Get Patient Reports Error:', error)
+        console.warn('Get Patient Reports Error:', error)
         return []
     }
 }
@@ -262,7 +262,7 @@ export async function sendReportToPatient(reportId: string) {
         revalidatePath('/dashboard/patient/reports')
         return { success: true }
     } catch (error: any) {
-        console.error('Send Report Error:', error)
+        console.warn('Send Report Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -292,7 +292,7 @@ export async function updateMedicalReport(reportId: string, updates: {
         revalidatePath('/dashboard/doctor/reports')
         return { success: true }
     } catch (error: any) {
-        console.error('Update Report Error:', error)
+        console.warn('Update Report Error:', error)
         return { success: false, error: error.message }
     }
 }

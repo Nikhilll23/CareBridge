@@ -18,7 +18,7 @@ export async function updateUserProfile(userId: string, data: { first_name: stri
         revalidatePath('/dashboard/settings')
         return { success: true }
     } catch (error) {
-        console.error('Error updating profile:', error)
+        console.warn('Error updating profile:', error)
         return { success: false, error: 'Failed' }
     }
 }

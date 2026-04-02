@@ -175,6 +175,7 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
                     </span>
                   ) : (
                     <button
+                      suppressHydrationWarning
                       onClick={async () => {
                         const toastId = toast.loading('Syncing with HIE...')
                         try {
@@ -198,14 +199,14 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
                 <td className="px-4 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <EditPatientDialog patient={patient}>
-                      <button className="inline-flex items-center gap-1 rounded-md bg-secondary/50 px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary">
+                      <button suppressHydrationWarning className="inline-flex items-center gap-1 rounded-md bg-secondary/50 px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary">
                         <Pencil className="h-3 w-3" />
                         Edit
                       </button>
                     </EditPatientDialog>
 
                     <Link href={`/dashboard/patients/${patient.id}`}>
-                      <button className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
+                      <button suppressHydrationWarning className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
                         <Eye className="h-3 w-3" />
                         View
                       </button>
@@ -213,7 +214,7 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <button className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20">
+                        <button suppressHydrationWarning className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20">
                           <Trash2 className="h-3 w-3" />
                         </button>
                       </AlertDialogTrigger>

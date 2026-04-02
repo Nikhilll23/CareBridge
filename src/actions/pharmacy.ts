@@ -153,7 +153,7 @@ export async function addToPatientCart(data: {
             })
 
         if (error) {
-            console.error('Add to cart error:', error)
+            console.warn('Add to cart error:', error)
             return { success: false, error: 'Failed to add to cart' }
         }
 
@@ -187,7 +187,7 @@ export async function markCartAsPaid(patientId: string) {
         revalidatePath('/dashboard/patient/cart')
         return { success: true }
     } catch (error) {
-        console.error('Payment Update Error:', error)
+        console.warn('Payment Update Error:', error)
         return { success: false, error: 'Failed to update payment status' }
     }
 }

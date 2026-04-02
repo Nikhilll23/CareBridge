@@ -23,7 +23,7 @@ export interface InventoryItem {
 export async function getInventory() {
   const { data, error } = await supabaseAdmin.from('pharmacy_inventory').select('*').order('drug_name')
 
-  if (error) console.error('getInventory Error:', error)
+  if (error) console.warn('getInventory Error:', error)
   console.log('getInventory Data:', data?.length)
 
   // Map fields for consistency
@@ -206,7 +206,7 @@ export async function addInventoryItem(data: any) {
     })
 
     if (error) {
-      console.error('Supabase Insert Error:', error)
+      console.warn('Supabase Insert Error:', error)
       throw error
     }
 
@@ -214,7 +214,7 @@ export async function addInventoryItem(data: any) {
     revalidatePath('/dashboard/pharmacy')
     return { success: true }
   } catch (e: any) {
-    console.error('addInventoryItem Exception:', e)
+    console.warn('addInventoryItem Exception:', e)
     return { success: false, error: e.message || 'Failed to add item' }
   }
 }
@@ -261,7 +261,7 @@ export async function dispenseMedication(data: { inventoryId: string, patientId:
     notes: notes
   })
 
-  if (auditError) console.error('Audit Log Failed', auditError)
+  if (auditError) console.warn('Audit Log Failed', auditError)
 
   // 4. Create Sale
   const total = item.price_per_unit * quantity

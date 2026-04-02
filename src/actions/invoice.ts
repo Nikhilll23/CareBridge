@@ -50,7 +50,7 @@ export async function generateInvoiceHTML(patientName: string, items: any[], tot
 
         return html
     } catch (error) {
-        console.error('AI Invoice Error:', error)
+        console.warn('AI Invoice Error:', error)
         return generateFallbackHTML(patientName, items, total, paymentId)
     }
 }

@@ -1,11 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Activity } from 'lucide-react'
-
-// Note: Dynamic imports are tricky with Cornerstone libraries that expect 'window' to exist at import time.
-// We will import them inside useEffect or use dynamic from next/dynamic if needed.
-// For now, standard imports might break server-side rendering, so ensure this component is only rendered client-side.
+import { Loader2, ExternalLink, AlertCircle, ZoomIn, ZoomOut, RotateCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface CornerstoneViewerProps {
     imageUrl: string
@@ -13,150 +10,202 @@ interface CornerstoneViewerProps {
 }
 
 export function CornerstoneViewer({ imageUrl, className }: CornerstoneViewerProps) {
-    const elementRef = useRef<HTMLDivElement>(null)
-    const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState(true)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+    const [errorMsg, setErrorMsg] = useState('')
+    const [zoom, setZoom] = useState(1)
+    const [rotation, setRotation] = useState(0)
+
+    const proxiedUrl = `/api/dicom-proxy?url=${encodeURIComponent(imageUrl)}`
 
     useEffect(() => {
-        let mounted = true
+        if (!imageUrl) { setStatus('error'); setErrorMsg('No image URL provided'); return }
 
-        const initCornerstone = async () => {
-            if (typeof window === 'undefined') return
+        let cancelled = false
 
+        const loadDicom = async () => {
+            setStatus('loading')
             try {
-                setLoading(true)
+                const dicomParser = (await import('dicom-parser')).default
 
-                // Dynamically import libraries to ensure they run only on client
-                let cornerstone: any, cornerstoneTools: any, cornerstoneWADOImageLoader: any, dicomParser: any, hammer: any
+                const res = await fetch(proxiedUrl)
+                if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
+                const buffer = await res.arrayBuffer()
+                const byteArray = new Uint8Array(buffer)
+
+                // Parse with exception handling for truncated files
+                let dataSet: any
                 try {
-                    cornerstone = (await import('cornerstone-core')).default
-                    const cornerstoneMath = (await import('cornerstone-math')).default
-                    cornerstoneTools = (await import('cornerstone-tools')).default
-                    cornerstoneWADOImageLoader = (await import('cornerstone-wado-image-loader')).default
-                    dicomParser = await import('dicom-parser')
-                    hammer = (await import('hammerjs')).default
-                } catch (importErr) {
-                    console.error('Cornerstone Load Error:', importErr)
-                    if (mounted) setError('DICOM viewer libraries failed to load')
-                    setLoading(false)
-                    return
-                }
-
-                // Configure WADO Image Loader
-                cornerstoneWADOImageLoader.external.cornerstone = cornerstone
-                cornerstoneWADOImageLoader.external.dicomParser = dicomParser
-
-                // Explicitly configure web workers (using local file served from public/dicom-worker.js)
-                // This eliminates CORS and version mismatch issues
-                const config = {
-                    webWorkerPath: '/dicom-worker.js',
-                    taskConfiguration: {
-                        decodeTask: {
-                            initializeCodecsOnStartup: true,
-                        },
-                    },
-                }
-                cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
-
-                // Setup Cornerstone Tools
-                cornerstoneTools.external.cornerstone = cornerstone
-                cornerstoneTools.external.Hammer = hammer
-                cornerstoneTools.external.cornerstoneMath = cornerstoneMath
-
-                cornerstoneTools.init()
-
-                // Enable Element
-                if (elementRef.current && mounted) {
-                    cornerstone.enable(elementRef.current)
-
-                    // Load Image
-                    // Note: imageUrl must be prefixed with 'wadouri:' for the loader to recognize it
-                    const imageId = `wadouri:${imageUrl}`
-
+                    dataSet = dicomParser.parseDicom(byteArray, { untilTag: 'x7fe00010' })
+                } catch (parseErr: any) {
+                    // Try parsing without stopping — some files are valid but throw on strict parse
                     try {
-                        const image = await cornerstone.loadImage(imageId)
-
-                        if (mounted && elementRef.current) {
-                            cornerstone.displayImage(elementRef.current, image)
-
-                            // Enable Tools
-                            // Wwwc (Window/Level) is the standard tool
-                            const WwwcTool = cornerstoneTools.WwwcTool
-                            const ZoomTool = cornerstoneTools.ZoomTool
-                            const PanTool = cornerstoneTools.PanTool
-
-                            cornerstoneTools.addTool(WwwcTool)
-                            cornerstoneTools.addTool(ZoomTool)
-                            cornerstoneTools.addTool(PanTool)
-
-                            cornerstoneTools.setToolActive('Wwwc', { mouseButtonMask: 1 }) // Left Click
-                            cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 2 }) // Middle Click
-                            cornerstoneTools.setToolActive('Zoom', { mouseButtonMask: 4 }) // Right Click
-
-                            setLoading(false)
-                        }
-                    } catch (loadError) {
-                        console.error('Cornerstone Load Error:', loadError)
-                        if (mounted) setError('Failed to load DICOM image')
-                        setLoading(false)
+                        dataSet = dicomParser.parseDicom(byteArray)
+                    } catch {
+                        throw new Error('Invalid or unsupported DICOM format')
                     }
                 }
-            } catch (err) {
-                console.error('Cornerstone Init Error:', err)
-                if (mounted) setError('Failed to initialize viewer')
-                setLoading(false)
-            }
-        }
 
-        initCornerstone()
+                const rows = dataSet.uint16('x00280010') || 0
+                const cols = dataSet.uint16('x00280011') || 0
+                const bitsAllocated = dataSet.uint16('x00280100') || 16
+                const bitsStored = dataSet.uint16('x00280101') || bitsAllocated
+                const pixelRepresentation = dataSet.uint16('x00280103') || 0
+                const samplesPerPixel = dataSet.uint16('x00280002') || 1
 
-        // Cleanup
-        return () => {
-            mounted = false
-            if (elementRef.current) {
-                try {
-                    const cornerstone = require('cornerstone-core').default
-                    cornerstone.disable(elementRef.current)
-                } catch (e) {
-                    // ignore cleanup errors
+                if (!rows || !cols) throw new Error('Invalid image dimensions in DICOM')
+
+                // Try standard pixel data tag first, then encapsulated
+                let pixelDataElement = dataSet.elements.x7fe00010
+
+                if (!pixelDataElement) {
+                    // Try encapsulated pixel data (compressed DICOM)
+                    pixelDataElement = dataSet.elements.x7fe00010 ||
+                        dataSet.elements.x7fe00000
+
+                    if (!pixelDataElement) {
+                        throw new Error('Compressed DICOM format — use Download to view')
+                    }
+                }
+
+                const canvas = canvasRef.current
+                if (!canvas || cancelled) return
+
+                canvas.width = cols
+                canvas.height = rows
+                const ctx = canvas.getContext('2d')
+                if (!ctx) throw new Error('Canvas context unavailable')
+
+                const offset = pixelDataElement.dataOffset
+                const length = pixelDataElement.length
+
+                let pixelData: Int16Array | Uint16Array | Uint8Array
+
+                if (bitsAllocated === 16) {
+                    // Need aligned buffer — copy to new ArrayBuffer
+                    const aligned = new ArrayBuffer(length)
+                    new Uint8Array(aligned).set(byteArray.slice(offset, offset + length))
+                    pixelData = pixelRepresentation === 1
+                        ? new Int16Array(aligned)
+                        : new Uint16Array(aligned)
+                } else {
+                    pixelData = byteArray.slice(offset, offset + length)
+                }
+
+                // Window/level: find min/max
+                let min = Infinity, max = -Infinity
+                const sampleCount = Math.min(pixelData.length, 10000)
+                const step = Math.max(1, Math.floor(pixelData.length / sampleCount))
+                for (let i = 0; i < pixelData.length; i += step) {
+                    const v = pixelData[i]
+                    if (v < min) min = v
+                    if (v > max) max = v
+                }
+                const range = max - min || 1
+
+                const imageData = ctx.createImageData(cols, rows)
+                const totalPixels = rows * cols
+
+                if (samplesPerPixel === 3) {
+                    // RGB
+                    for (let i = 0; i < totalPixels; i++) {
+                        imageData.data[i * 4] = pixelData[i * 3] as number
+                        imageData.data[i * 4 + 1] = pixelData[i * 3 + 1] as number
+                        imageData.data[i * 4 + 2] = pixelData[i * 3 + 2] as number
+                        imageData.data[i * 4 + 3] = 255
+                    }
+                } else {
+                    // Grayscale
+                    for (let i = 0; i < totalPixels; i++) {
+                        const normalized = Math.round(((pixelData[i] - min) / range) * 255)
+                        const clamped = Math.max(0, Math.min(255, normalized))
+                        imageData.data[i * 4] = clamped
+                        imageData.data[i * 4 + 1] = clamped
+                        imageData.data[i * 4 + 2] = clamped
+                        imageData.data[i * 4 + 3] = 255
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0)
+                if (!cancelled) setStatus('ready')
+
+            } catch (err: any) {
+                console.error('DICOM load error:', err)
+                if (!cancelled) {
+                    setErrorMsg(err.message || 'Failed to load DICOM')
+                    setStatus('error')
                 }
             }
         }
+
+        loadDicom()
+        return () => { cancelled = true }
     }, [imageUrl])
 
     return (
-        <div className={`relative bg-black ${className}`}>
-            {loading && (
-                <div className="absolute inset-0 flex items-center justify-center text-white z-10">
-                    <Activity className="h-8 w-8 animate-spin" />
-                    <span className="ml-2">Loading DICOM...</span>
+        <div className={`relative bg-black flex flex-col ${className}`}>
+            {/* Toolbar — only show when ready */}
+            {status === 'ready' && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-900/80 border-b border-gray-700 shrink-0">
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-gray-700"
+                        onClick={() => setZoom(z => Math.min(z + 0.25, 4))}>
+                        <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-gray-700"
+                        onClick={() => setZoom(z => Math.max(z - 0.25, 0.25))}>
+                        <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-gray-700"
+                        onClick={() => setRotation(r => (r + 90) % 360)}>
+                        <RotateCw className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs text-gray-400 ml-1">{Math.round(zoom * 100)}%</span>
+                    <Button size="sm" variant="ghost" className="ml-auto text-xs text-gray-400 hover:text-white h-7"
+                        onClick={() => { setZoom(1); setRotation(0) }}>
+                        Reset
+                    </Button>
                 </div>
             )}
-            {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-10">
-                    <p className="text-red-400 font-medium mb-2">{error}</p>
-                    <p className="text-muted-foreground text-sm">
-                        The DICOM viewer could not load. You can try opening the image directly:
-                    </p>
-                    {imageUrl && (
-                        <a
-                            href={imageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-3 text-sm text-blue-400 underline"
+
+            {/* Viewer area */}
+            <div className="flex-1 flex items-center justify-center overflow-auto relative">
+                {status === 'loading' && (
+                    <div className="flex flex-col items-center gap-3 text-white">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                        <span className="text-sm text-gray-300">Loading DICOM image...</span>
+                    </div>
+                )}
+
+                {status === 'error' && (
+                    <div className="flex flex-col items-center text-center p-6 gap-3">
+                        <AlertCircle className="h-10 w-10 text-red-400" />
+                        <p className="text-red-400 font-medium">Failed to initialize viewer</p>
+                        <p className="text-gray-400 text-sm max-w-xs">{errorMsg}</p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 text-blue-400 border-blue-400 hover:bg-blue-400/10"
+                            onClick={() => window.open(proxiedUrl, '_blank')}
                         >
-                            Open image in new tab
-                        </a>
-                    )}
-                </div>
-            )}
-            <div
-                ref={elementRef}
-                className="w-full h-full"
-                style={{ minHeight: '400px' }}
-                onContextMenu={(e) => e.preventDefault()} // Prevent context menu for right-click zoom
-            />
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Download DICOM file
+                        </Button>
+                    </div>
+                )}
+
+                <canvas
+                    ref={canvasRef}
+                    style={{
+                        display: status === 'ready' ? 'block' : 'none',
+                        transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                        transition: 'transform 0.2s ease',
+                        imageRendering: 'pixelated',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                    }}
+                />
+            </div>
         </div>
     )
 }

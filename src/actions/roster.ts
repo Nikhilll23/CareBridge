@@ -27,7 +27,7 @@ export async function getDutyRoster(date: Date) {
 
         return { success: true, data: data || [] }
     } catch (error) {
-        console.error('Error fetching roster:', error)
+        console.warn('Error fetching roster:', error)
         return { success: false, data: [] }
     }
 }
@@ -50,7 +50,7 @@ export async function getRosterStats() {
 
         return { onDuty: count || 0 }
     } catch (error) {
-        console.error('Error fetching roster stats:', error)
+        console.warn('Error fetching roster stats:', error)
         return { onDuty: 0 }
     }
 }
@@ -95,7 +95,7 @@ export async function addToRoster(data: {
         revalidatePath('/dashboard/admin/roster')
         return { success: true }
     } catch (error) {
-        console.error('Error adding to roster:', error)
+        console.warn('Error adding to roster:', error)
         return { success: false, error: 'Failed to schedule staff' }
     }
 }
@@ -128,7 +128,7 @@ export async function deleteFromRoster(id: string) {
         revalidatePath('/dashboard/admin/roster')
         return { success: true }
     } catch (error) {
-        console.error('Error removing from roster:', error)
+        console.warn('Error removing from roster:', error)
         return { success: false, error: 'Failed to remove entry' }
     }
 }

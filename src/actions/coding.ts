@@ -116,7 +116,7 @@ export async function finalizeDiagnosis(data: DiagnosisData) {
         }
 
     } catch (error: any) {
-        console.error(error)
+        console.warn(error)
         return { success: false, error: error.message }
     }
 }

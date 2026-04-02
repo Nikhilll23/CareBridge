@@ -38,13 +38,6 @@ export default async function PatientDashboard() {
     const { patient, todaysAppointments, futureAppointments, past, totalDue, availableDoctors, invoices, prescriptions, medicalReports, handwrittenNotes } = data
     const nextFutureVisit = futureAppointments[0]
 
-    console.log('--- Patient Dashboard Debug ---')
-    console.log('Patient ID:', patient.id)
-    console.log('Total Due:', totalDue)
-    console.log('Invoices Count:', invoices?.length)
-    console.log('Todays Appointments:', todaysAppointments?.length)
-    console.log('-------------------------------')
-
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -29,7 +29,7 @@ export async function getBedAnalytics() {
 
         return { success: true, occupancy, chartData }
     } catch (error: any) {
-        console.error('Bed Analytics Error:', error)
+        console.warn('Bed Analytics Error:', error)
         return { success: false, error: error.message }
     }
 }

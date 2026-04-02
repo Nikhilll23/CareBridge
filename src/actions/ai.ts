@@ -42,7 +42,7 @@ export async function chatWithAI(
 
     return await analyzeMedicalData(patientContext || '', query, chatHistory, systemPrompt)
   } catch (error: any) {
-    console.error('Error in chatWithAI:', error)
+    console.warn('Error in chatWithAI:', error)
     return { success: false, error: error.message || 'Failed to process request' }
   }
 }
@@ -110,7 +110,7 @@ export async function getPatientAIContext(patientId: string): Promise<string> {
 
     return context
   } catch (error) {
-    console.error('Error getting patient context:', error)
+    console.warn('Error getting patient context:', error)
     return 'Error loading patient data'
   }
 }
@@ -128,7 +128,7 @@ export async function summarizePatient(patientId: string): Promise<AIResponse> {
     const context = await getPatientAIContext(patientId)
     return await generateMedicalSummary({ demographics: context })
   } catch (error: any) {
-    console.error('Error in summarizePatient:', error)
+    console.warn('Error in summarizePatient:', error)
     return { success: false, error: error.message || 'Failed to summarize patient' }
   }
 }
@@ -145,7 +145,7 @@ export async function checkPatientDrugInteractions(medications: string[]): Promi
 
     return await checkDrugInteractions(medications)
   } catch (error: any) {
-    console.error('Error in checkPatientDrugInteractions:', error)
+    console.warn('Error in checkPatientDrugInteractions:', error)
     return { success: false, error: error.message || 'Failed to check interactions' }
   }
 }
@@ -179,7 +179,7 @@ export async function analyzePatientRadiology(
 
     return await analyzeRadiologyReport(report.findings, patientContext)
   } catch (error: any) {
-    console.error('Error in analyzePatientRadiology:', error)
+    console.warn('Error in analyzePatientRadiology:', error)
     return { success: false, error: error.message || 'Failed to analyze radiology' }
   }
 }
@@ -216,7 +216,7 @@ export async function getBulkPatientContext(): Promise<{ success: boolean, conte
 
     return { success: true, context: summary, count: patients.length }
   } catch (error: any) {
-    console.error('Error in bulk context:', error)
+    console.warn('Error in bulk context:', error)
     return { success: false, error: 'Failed to load bulk context' }
   }
 }
@@ -268,7 +268,7 @@ export async function mapSymptomToSpecialization(
 
     return { success: false, error: response.error || 'Failed to map symptom' }
   } catch (error: any) {
-    console.error('Error in mapSymptomToSpecialization:', error)
+    console.warn('Error in mapSymptomToSpecialization:', error)
     return { success: false, error: error.message }
   }
 }

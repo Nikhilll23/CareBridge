@@ -69,7 +69,7 @@ export async function applyOrderSet(patientId: string, orderSetId: string, docto
         return { success: true, message: `Protocol "${protocol.name}" Applied (${meds.length} Meds, ${labs.length} Labs)` }
 
     } catch (error) {
-        console.error('Order Set Error:', error)
+        console.warn('Order Set Error:', error)
         return { success: false, error: 'Failed to apply protocol' }
     }
 }

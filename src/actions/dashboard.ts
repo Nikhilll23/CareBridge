@@ -46,14 +46,14 @@ export async function getAdminDashboardStats(): Promise<DashboardStats | null> {
     // Verify admin access
     const user = await currentUser()
     if (!user) {
-      console.error('Unauthorized: No user found')
+      console.warn('Unauthorized: No user found')
       return null
     }
     
     // This function is deprecated, use getAdminStats() instead
     return await getAdminStats()
   } catch (error) {
-    console.error('Error in getAdminDashboardStats:', error)
+    console.warn('Error in getAdminDashboardStats:', error)
     return null
   }
 }
@@ -68,7 +68,7 @@ export async function getAdminStats(): Promise<DashboardStats | null> {
     // Verify admin access
     const user = await currentUser()
     if (!user) {
-      console.error('Unauthorized: No user found')
+      console.warn('Unauthorized: No user found')
       return null
     }
 
@@ -79,7 +79,7 @@ export async function getAdminStats(): Promise<DashboardStats | null> {
       .single()
 
     if (!userData || userData.role !== 'ADMIN') {
-      console.error('Unauthorized: User is not an admin')
+      console.warn('Unauthorized: User is not an admin')
       return null
     }
 
@@ -267,7 +267,7 @@ export async function getAdminStats(): Promise<DashboardStats | null> {
       departmentDistribution,
     }
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
+    console.warn('Error fetching dashboard stats:', error)
     return null
   }
 }

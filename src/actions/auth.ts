@@ -18,7 +18,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
     const clerkUser = await currentUser()
 
     if (!clerkUser) {
-      // console.error('No authenticated user found') 
+      // console.warn('No authenticated user found') 
       // Reduced log spam
       return null
     }
@@ -29,7 +29,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
     const lastName = clerkUser.lastName || ''
 
     if (!email) {
-      console.error('User has no email address')
+      console.warn('User has no email address')
       return null
     }
 
@@ -73,7 +73,8 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       // PGRST116 = not found, which is expected for new users
-      console.error('Error fetching user from Supabase:', fetchError.message, '| code:', fetchError.code)
+      // Use warn instead of error to avoid Next.js dev overlay triggering on transient network issues
+      console.warn('Supabase user fetch warning:', fetchError.message, '| code:', fetchError.code)
       // Don't throw - try to create the user anyway
     }
 
@@ -180,7 +181,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
       createdAt: new Date(newUser.created_at),
     }
   } catch (error) {
-    console.error('Sync user error:', error instanceof Error ? error.message : 'Unknown error')
+    console.warn('Sync user error:', error instanceof Error ? error.message : 'Unknown error')
     return null
   }
 })
@@ -197,12 +198,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       .single()
 
     if (error) {
-      console.error('Error fetching user profile:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      })
+      console.warn('Error fetching user profile:', error.message, '| code:', error.code)
       return null
     }
 
@@ -216,7 +212,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       createdAt: new Date(data.created_at),
     }
   } catch (error) {
-    console.error('Get user profile error:', error instanceof Error ? error.message : 'Unknown error')
+    console.warn('Get user profile error:', error instanceof Error ? error.message : 'Unknown error')
     return null
   }
 }

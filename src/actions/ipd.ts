@@ -21,7 +21,7 @@ export async function getBedStats(): Promise<BedData[]> {
             .order('bed_number', { ascending: true })
 
         if (error) {
-            console.error('Fetch Beds Error:', error)
+            console.warn('Fetch Beds Error:', error)
             return []
         }
 
@@ -42,7 +42,7 @@ export async function getBedStats(): Promise<BedData[]> {
             } : undefined
         }))
     } catch (e) {
-        console.error('Unexpected error fetching beds', e)
+        console.warn('Unexpected error fetching beds', e)
         return []
     }
 }

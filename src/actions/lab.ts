@@ -87,7 +87,7 @@ export async function getLabOrders(status?: string) {
     }
 
     const { data, error } = await q
-    if (error) console.error('Error fetching lab orders:', error)
+    if (error) console.warn('Error fetching lab orders:', error)
     return data || []
 }
 

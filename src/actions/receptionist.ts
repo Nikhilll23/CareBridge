@@ -32,7 +32,7 @@ export async function searchMedicinesFDA(query: string) {
 
         return { success: true, medicines }
     } catch (error: any) {
-        console.error('OpenFDA Search Error:', error)
+        console.warn('OpenFDA Search Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -77,7 +77,7 @@ export async function getReceptionistStats() {
             pendingPayments: pendingPayments?.length || 0
         }
     } catch (error) {
-        console.error('Get Receptionist Stats Error:', error)
+        console.warn('Get Receptionist Stats Error:', error)
         return null
     }
 }
@@ -112,7 +112,7 @@ export async function scheduleAppointmentReceptionist(data: {
         revalidatePath('/dashboard/receptionist')
         return { success: true, appointment }
     } catch (error: any) {
-        console.error('Schedule Appointment Error:', error)
+        console.warn('Schedule Appointment Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -170,7 +170,7 @@ export async function registerWalkInPatient(data: {
         revalidatePath('/dashboard/receptionist')
         return { success: true, patient }
     } catch (error: any) {
-        console.error('Register Patient Error:', error)
+        console.warn('Register Patient Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -195,7 +195,7 @@ export async function getAllPaymentsReceptionist() {
 
         return payments || []
     } catch (error) {
-        console.error('Get Payments Error:', error)
+        console.warn('Get Payments Error:', error)
         return []
     }
 }
@@ -227,7 +227,7 @@ export async function getPatientBalance(patientId: string) {
             }
         }
     } catch (error: any) {
-        console.error('Get Balance Error:', error)
+        console.warn('Get Balance Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -298,7 +298,7 @@ export async function createBillingInvoice(data: {
         revalidatePath('/dashboard/receptionist/billing')
         return { success: true, payment }
     } catch (error: any) {
-        console.error('Create Invoice Error:', error)
+        console.warn('Create Invoice Error:', error)
         return { success: false, error: error.message }
     }
 }

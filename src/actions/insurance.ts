@@ -43,7 +43,7 @@ export async function createClaim(data: InsuranceClaimData) {
         revalidatePath('/dashboard/admin/insurance')
         return { success: true }
     } catch (error) {
-        console.error('Error creating claim:', error)
+        console.warn('Error creating claim:', error)
         return { success: false, error: 'Failed' }
     }
 }
@@ -62,7 +62,7 @@ export async function updateClaim(id: string, data: Partial<InsuranceClaimData>)
         revalidatePath('/dashboard/admin/insurance')
         return { success: true }
     } catch (error) {
-        console.error('Error updating claim:', error)
+        console.warn('Error updating claim:', error)
         return { success: false, error: 'Failed' }
     }
 }
@@ -95,7 +95,7 @@ export async function deleteClaim(id: string) {
         revalidatePath('/dashboard/admin/insurance')
         return { success: true }
     } catch (error) {
-        console.error('Error deleting claim:', error)
+        console.warn('Error deleting claim:', error)
         return { success: false, error: 'Failed' }
     }
 }

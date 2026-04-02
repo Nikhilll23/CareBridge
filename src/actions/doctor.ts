@@ -92,68 +92,75 @@ export async function updateConsultation(appointmentId: string, notes: string, p
         const { error: apptError } = await supabaseAdmin
             .from('appointments')
             .update({
-                reason: notes, // Storing clinical notes in 'reason' or ideally a new column 'clinical_notes'
+                reason: notes,
                 status: 'COMPLETED'
             })
             .eq('id', appointmentId)
 
         if (apptError) throw apptError
 
-        // 2. Create Prescription if provided
-        if (prescriptionData) {
-            // Get patient_id from appointment
-            const { data: apptData } = await supabaseAdmin
-                .from('appointments')
-                .select('patient_id')
-                .eq('id', appointmentId)
-                .single()
+        // 2. Get patient_id once
+        const { data: apptData } = await supabaseAdmin
+            .from('appointments')
+            .select('patient_id')
+            .eq('id', appointmentId)
+            .single()
+
+        const patientId = apptData?.patient_id
+
+        // 3. Handle prescriptions — supports both single object and array
+        const medicines: any[] = prescriptionData
+            ? Array.isArray(prescriptionData) ? prescriptionData : [prescriptionData]
+            : []
+
+        for (const med of medicines) {
+            if (!med.drugName) continue
 
             const { error: rxError } = await supabaseAdmin
                 .from('prescriptions')
                 .insert({
                     appointment_id: appointmentId,
-                    patient_id: apptData?.patient_id,
-                    drug_name: prescriptionData.drugName,
-                    dosage: prescriptionData.dosage,
-                    frequency: prescriptionData.frequency,
-                    duration: prescriptionData.duration,
-                    instructions: prescriptionData.instructions
+                    patient_id: patientId,
+                    drug_name: med.drugName,
+                    dosage: med.dosage || '',
+                    frequency: med.frequency || '',
+                    duration: med.duration || '',
+                    instructions: med.instructions || ''
                 })
-                .select()
 
             if (rxError) {
-                console.error('Prescription insert error:', rxError)
+                console.warn('Prescription insert error:', rxError)
                 throw rxError
             }
 
-            // Deduct inventory
-            // We attempt to find the drug by name to deduct stock
+            // Deduct from pharmacy_inventory by drug_name
             const { data: inventoryItem } = await supabaseAdmin
-                .from('inventory')
-                .select('id, stock_quantity')
-                .eq('item_name', prescriptionData.drugName)
+                .from('pharmacy_inventory')
+                .select('id, quantity, price_per_unit')
+                .eq('drug_name', med.drugName)
+                .order('expiry_date', { ascending: true })
+                .limit(1)
                 .single()
 
             if (inventoryItem) {
-                const newQuantity = inventoryItem.stock_quantity - 1 // Assuming 1 unit per prescription for simplicity or parse dosage
-                // For MVP, we just deduct 1 unit or parse if possible. Let's just deduct 1 to show the flow.
-
                 await supabaseAdmin
-                    .from('inventory')
-                    .update({ stock_quantity: Math.max(0, newQuantity) })
+                    .from('pharmacy_inventory')
+                    .update({ quantity: Math.max(0, inventoryItem.quantity - 1) })
                     .eq('id', inventoryItem.id)
+            }
 
-                // Log dispense (implied)
-                await logAuditAction(
-                    'DISPENSE_MEDICATION', // Reusing action name or creating new
-                    'PHARMACY',
-                    inventoryItem.id,
-                    {
+            // Add to patient's pharmacy cart
+            if (patientId) {
+                await supabaseAdmin
+                    .from('pharmacy_cart_items')
+                    .insert({
+                        patient_id: patientId,
+                        medicine_id: inventoryItem?.id || null,
+                        medicine_name: med.drugName,
+                        price: inventoryItem?.price_per_unit || 0,
                         quantity: 1,
-                        reason: 'Prescription Auto-Deduct',
-                        appointmentId
-                    }
-                )
+                        status: 'PENDING'
+                    })
             }
         }
 
@@ -164,15 +171,17 @@ export async function updateConsultation(appointmentId: string, notes: string, p
             appointmentId,
             {
                 notesLength: notes.length,
-                prescriptionIssued: !!prescriptionData,
+                prescriptionIssued: medicines.length > 0,
+                medicinesCount: medicines.length,
                 completedBy: user.emailAddresses[0]?.emailAddress
             }
         )
 
         revalidatePath('/dashboard/doctor')
+        revalidatePath('/dashboard/patient')
         return { success: true }
     } catch (error) {
-        console.error('Consultation Error:', error)
+        console.warn('Consultation Error:', error)
         return { success: false, error: 'Failed to save consultation' }
     }
 }

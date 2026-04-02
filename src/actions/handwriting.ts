@@ -74,7 +74,7 @@ export async function saveHandwrittenNote(data: {
         revalidatePath('/dashboard/doctor')
         return { success: true, data: note }
     } catch (error) {
-        console.error('Save Handwritten Note Error:', error)
+        console.warn('Save Handwritten Note Error:', error)
         return { success: false, error: 'Failed to save handwritten note' }
     }
 }
@@ -121,7 +121,7 @@ export async function updateHandwrittenNote(
         revalidatePath('/dashboard/doctor')
         return { success: true, data: note }
     } catch (error) {
-        console.error('Update Handwritten Note Error:', error)
+        console.warn('Update Handwritten Note Error:', error)
         return { success: false, error: 'Failed to update handwritten note' }
     }
 }
@@ -147,7 +147,7 @@ export async function getPatientHandwrittenNotes(patientId: string) {
 
         return { success: true, data: data || [] }
     } catch (error) {
-        console.error('Get Patient Notes Error:', error)
+        console.warn('Get Patient Notes Error:', error)
         return { success: false, error: 'Failed to fetch notes', data: [] }
     }
 }
@@ -173,7 +173,7 @@ export async function getAppointmentHandwrittenNotes(appointmentId: string) {
 
         return { success: true, data: data || [] }
     } catch (error) {
-        console.error('Get Appointment Notes Error:', error)
+        console.warn('Get Appointment Notes Error:', error)
         return { success: false, error: 'Failed to fetch notes', data: [] }
     }
 }
@@ -203,7 +203,7 @@ export async function getHandwrittenNote(noteId: string) {
 
         return { success: true, data }
     } catch (error) {
-        console.error('Get Handwritten Note Error:', error)
+        console.warn('Get Handwritten Note Error:', error)
         return { success: false, error: 'Failed to fetch note', data: null }
     }
 }
@@ -236,7 +236,7 @@ export async function deleteHandwrittenNote(noteId: string) {
         revalidatePath('/dashboard/doctor')
         return { success: true }
     } catch (error) {
-        console.error('Delete Handwritten Note Error:', error)
+        console.warn('Delete Handwritten Note Error:', error)
         return { success: false, error: 'Failed to delete note' }
     }
 }
@@ -279,7 +279,7 @@ export async function getDoctorHandwrittenNotes(limit = 50) {
 
         return { success: true, data: data || [] }
     } catch (error) {
-        console.error('Get Doctor Notes Error:', error)
+        console.warn('Get Doctor Notes Error:', error)
         return { success: false, error: 'Failed to fetch notes', data: [] }
     }
 }

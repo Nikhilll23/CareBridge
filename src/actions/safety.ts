@@ -89,7 +89,7 @@ export async function validateOrder(patientId: string, order: OrderData): Promis
         }
 
     } catch (error) {
-        console.error('Safety Check Failed:', error)
+        console.warn('Safety Check Failed:', error)
         // Fail open or closed? Usually fail closed (prevent) or warn "Check failed".
         // Let's return safe: true but log error to not block workflow if system down, or warn.
         return { safe: true, warnings: ['System Error: Could not run safety checks.'] }

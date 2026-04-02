@@ -108,7 +108,7 @@ export async function registerPatient(data: PatientFormValues) {
       .single()
 
     if (insertError) {
-      console.error('Error inserting patient into Supabase:', insertError)
+      console.warn('Error inserting patient into Supabase:', insertError)
       return {
         success: false,
         error: 'Failed to create patient record',
@@ -154,15 +154,15 @@ export async function registerPatient(data: PatientFormValues) {
         .eq('id', patient.id)
 
       if (updateError) {
-        console.error('Error updating patient with Metriport ID:', updateError)
+        console.warn('Error updating patient with Metriport ID:', updateError)
         // Don't fail the whole operation - patient is created, just log the issue
       } else {
         console.log('✅ Patient successfully synced to HIE with Metriport ID:', metriportId)
       }
     } catch (metriportError) {
-      console.error('❌ Error registering patient with Metriport HIE:', metriportError)
+      console.warn('❌ Error registering patient with Metriport HIE:', metriportError)
       if (metriportError instanceof Error) {
-        console.error('Error details:', metriportError.message)
+        console.warn('Error details:', metriportError.message)
       }
     }
 
@@ -200,7 +200,7 @@ export async function registerPatient(data: PatientFormValues) {
       }
     }
 
-    console.error('Error in registerPatient:', error)
+    console.warn('Error in registerPatient:', error)
     return { success: false, error: 'Failed to register patient' }
   }
 }
@@ -276,7 +276,7 @@ export async function syncPatientToHIE(patientId: string) {
     revalidatePath('/dashboard/patients')
     return { success: true, message: 'Patient successfully synced to HIE' }
   } catch (error) {
-    console.error('Error syncing patient to HIE:', error)
+    console.warn('Error syncing patient to HIE:', error)
     return { success: false, error: 'Failed to sync with HIE' }
   }
 }
@@ -322,13 +322,13 @@ export async function getPatients(): Promise<Patient[]> {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching patients:', error)
+      console.warn('Error fetching patients:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('Error in getPatients:', error)
+    console.warn('Error in getPatients:', error)
     return []
   }
 }
@@ -346,13 +346,13 @@ export async function getPatient(id: string): Promise<Patient | null> {
       .single()
 
     if (error) {
-      console.error('Error fetching patient:', error)
+      console.warn('Error fetching patient:', error)
       return null
     }
 
     return data
   } catch (error) {
-    console.error('Error in getPatient:', error)
+    console.warn('Error in getPatient:', error)
     return null
   }
 }
@@ -370,7 +370,7 @@ export async function getPatientById(id: string) {
       .single()
 
     if (error) {
-      console.error('Error fetching patient:', error)
+      console.warn('Error fetching patient:', error)
       return null
     }
 
@@ -402,7 +402,7 @@ export async function getPatientById(id: string) {
       },
     }
   } catch (error) {
-    console.error('Error in getPatientById:', error)
+    console.warn('Error in getPatientById:', error)
     return null
   }
 }
@@ -496,7 +496,7 @@ export async function deletePatient(id: string) {
       .eq('id', id)
 
     if (error) {
-      console.error('Error deleting patient:', error)
+      console.warn('Error deleting patient:', error)
       return { success: false, error: 'Failed to delete patient' }
     }
 
@@ -515,7 +515,7 @@ export async function deletePatient(id: string) {
     revalidatePath('/dashboard/patients')
     return { success: true, message: 'Patient deleted successfully' }
   } catch (error) {
-    console.error('Error in deletePatient:', error)
+    console.warn('Error in deletePatient:', error)
     return {
       success: false,
       error: 'Failed to delete patient',
@@ -546,7 +546,7 @@ export async function getPatientClinicalData(metriportId: string | null) {
     const apiKey = process.env.METRIPORT_API_KEY
 
     if (!apiKey) {
-      console.error('❌ METRIPORT_API_KEY not configured')
+      console.warn('❌ METRIPORT_API_KEY not configured')
       return emptyData
     }
 
@@ -576,7 +576,7 @@ export async function getPatientClinicalData(metriportId: string | null) {
         console.log('⚠️ Query initiation response:', error)
       }
     } catch (err) {
-      console.error('Error starting consolidated query:', err)
+      console.warn('Error starting consolidated query:', err)
     }
 
     // Fetch consolidated data
@@ -632,7 +632,7 @@ export async function getPatientClinicalData(metriportId: string | null) {
         console.log('⚠️ Consolidated data not yet available (this is normal for new patients)')
       }
     } catch (err) {
-      console.error('Error fetching consolidated data:', err)
+      console.warn('Error fetching consolidated data:', err)
     }
 
     console.log(`✅ Clinical data fetched: ${allergies.length} allergies, ${medications.length} medications, ${conditions.length} conditions`)
@@ -643,7 +643,7 @@ export async function getPatientClinicalData(metriportId: string | null) {
       conditions,
     }
   } catch (error) {
-    console.error('❌ Error fetching clinical data from Metriport:', error)
+    console.warn('❌ Error fetching clinical data from Metriport:', error)
     return emptyData
   }
 }
@@ -662,7 +662,7 @@ export async function getPatientDocuments(metriportId: string | null, facilityId
     const apiKey = process.env.METRIPORT_API_KEY
 
     if (!apiKey) {
-      console.error('❌ METRIPORT_API_KEY not configured')
+      console.warn('❌ METRIPORT_API_KEY not configured')
       return []
     }
 
@@ -684,7 +684,7 @@ export async function getPatientDocuments(metriportId: string | null, facilityId
         console.log('✅ Document query initiated')
       }
     } catch (err) {
-      console.error('Error starting document query:', err)
+      console.warn('Error starting document query:', err)
     }
 
     // List available documents
@@ -705,7 +705,7 @@ export async function getPatientDocuments(metriportId: string | null, facilityId
 
     return []
   } catch (error) {
-    console.error('❌ Error fetching documents from Metriport:', error)
+    console.warn('❌ Error fetching documents from Metriport:', error)
     return []
   }
 }
@@ -723,13 +723,13 @@ export async function getAllPatientsForSelect() {
       .limit(100)
 
     if (error) {
-      console.error('Error fetching patients:', error)
+      console.warn('Error fetching patients:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('Error fetching patients:', error)
+    console.warn('Error fetching patients:', error)
     return []
   }
 }
@@ -766,12 +766,12 @@ export async function syncPatientHealthData(metriportId: string) {
       revalidatePath('/dashboard/patients')
       return { success: true }
     } else {
-      console.error('Sync failed', await consolidatedResponse.text(), await documentResponse.text())
+      console.warn('Sync failed', await consolidatedResponse.text(), await documentResponse.text())
       return { success: false, error: 'One or more sync queries failed to start' }
     }
 
   } catch (error) {
-    console.error('Error in syncPatientHealthData:', error)
+    console.warn('Error in syncPatientHealthData:', error)
     return { success: false, error: 'Internal server error during sync' }
   }
 }
@@ -821,7 +821,7 @@ export async function updatePatient(id: string, data: Partial<PatientFormValues>
     revalidatePath(`/dashboard/patients/${id}`)
     return { success: true, message: 'Patient updated successfully' }
   } catch (error) {
-    console.error('Update Error:', error)
+    console.warn('Update Error:', error)
     return { success: false, error: 'Failed to update patient' }
   }
 }
@@ -879,7 +879,7 @@ export async function registerEmergencyPatient(gender: 'Male' | 'Female' | 'Othe
     revalidatePath('/dashboard/patients')
     return { success: true, data: patient }
   } catch (error: any) {
-    console.error('Error in registerEmergencyPatient:', error)
+    console.warn('Error in registerEmergencyPatient:', error)
     return { success: false, error: error.message || 'Failed to register emergency patient' }
   }
 }
@@ -900,7 +900,7 @@ export async function searchPatients(query: string) {
     .limit(5)
 
   if (error) {
-    console.error('Error searching patients:', error)
+    console.warn('Error searching patients:', error)
     return []
   }
 
@@ -973,7 +973,7 @@ export async function mergePatients(primaryId: string, secondaryId: string) {
     return { success: true, message: 'Patients merged successfully' }
 
   } catch (error) {
-    console.error('Merge Error:', error)
+    console.warn('Merge Error:', error)
     return { success: false, error: 'Failed to merge records' }
   }
 }
