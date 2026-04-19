@@ -5,56 +5,57 @@ import { supabaseAdmin } from '@/lib/supabase'
 import Link from 'next/link'
 
 async function getDashboardStats() {
-  const supabase = supabaseAdmin
+  try {
+    const supabase = supabaseAdmin
 
-  // Get total patients
-  const { count: totalPatients } = await supabase
-    .from('patients')
-    .select('*', { count: 'exact', head: true })
+    const { count: totalPatients } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true })
 
-  // Get today's appointments
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
 
-  const { count: appointmentsToday } = await supabase
-    .from('appointments')
-    .select('*', { count: 'exact', head: true })
-    .gte('appointment_date', today.toISOString())
-    .lt('appointment_date', tomorrow.toISOString())
+    const { count: appointmentsToday } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact', head: true })
+      .gte('appointment_date', today.toISOString())
+      .lt('appointment_date', tomorrow.toISOString())
 
-  const { count: pendingAppts } = await supabase
-    .from('appointments')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'SCHEDULED')
-    .gte('appointment_date', today.toISOString())
-    .lt('appointment_date', tomorrow.toISOString())
+    const { count: pendingAppts } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'SCHEDULED')
+      .gte('appointment_date', today.toISOString())
+      .lt('appointment_date', tomorrow.toISOString())
 
-  // Get active staff
-  const { count: activeStaff } = await supabase
-    .from('users')
-    .select('*', { count: 'exact', head: true })
-    .in('role', ['ADMIN', 'DOCTOR', 'NURSE'])
+    const { count: activeStaff } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .in('role', ['ADMIN', 'DOCTOR', 'NURSE'])
 
-  // Get this month's revenue
-  const now = new Date()
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const now = new Date()
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  const { data: monthlyInvoices } = await supabase
-    .from('invoices')
-    .select('amount')
-    .eq('status', 'PAID')
-    .gte('created_at', firstDayOfMonth.toISOString())
+    const { data: monthlyInvoices } = await supabase
+      .from('invoices')
+      .select('amount')
+      .eq('status', 'PAID')
+      .gte('created_at', firstDayOfMonth.toISOString())
 
-  const monthlyRevenue = monthlyInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
+    const monthlyRevenue = monthlyInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
 
-  return {
-    totalPatients: totalPatients || 0,
-    appointmentsToday: appointmentsToday || 0,
-    pendingAppts: pendingAppts || 0,
-    activeStaff: activeStaff || 0,
-    monthlyRevenue
+    return {
+      totalPatients: totalPatients || 0,
+      appointmentsToday: appointmentsToday || 0,
+      pendingAppts: pendingAppts || 0,
+      activeStaff: activeStaff || 0,
+      monthlyRevenue
+    }
+  } catch (err) {
+    console.warn('getDashboardStats failed (DB unreachable?):', err)
+    return { totalPatients: 0, appointmentsToday: 0, pendingAppts: 0, activeStaff: 0, monthlyRevenue: 0 }
   }
 }
 

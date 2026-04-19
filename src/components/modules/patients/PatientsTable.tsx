@@ -30,10 +30,20 @@ interface PatientsTableProps {
 export function PatientsTable({ patients, userRole }: PatientsTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Safe Date Formatter
+  const safeFormatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'N/A'
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return 'N/A'
+    return format(d, 'MMM dd, yyyy')
+  }
+
   // Calculate age from date of birth
-  const calculateAge = (dob: string) => {
+  const calculateAge = (dob: string | null | undefined) => {
+    if (!dob) return 0
     const today = new Date()
     const birthDate = new Date(dob)
+    if (isNaN(birthDate.getTime())) return 0
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDiff = today.getMonth() - birthDate.getMonth()
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
@@ -127,7 +137,7 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
                 Registered
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                HIE Status
+                CB Status
               </th>
               <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
                 Actions
@@ -150,7 +160,7 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
                         {patient.first_name} {patient.last_name}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        DOB: {format(new Date(patient.date_of_birth), 'MMM dd, yyyy')}
+                        DOB: {safeFormatDate(patient.date_of_birth)}
                       </div>
                     </div>
                   </div>
@@ -165,7 +175,7 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
                   {patient.contact_number}
                 </td>
                 <td className="px-4 py-4 text-sm text-muted-foreground">
-                  {format(new Date(patient.created_at), 'MMM dd, yyyy')}
+                  {safeFormatDate(patient.created_at)}
                 </td>
                 <td className="px-4 py-4">
                   {patient.metriport_id ? (
@@ -177,7 +187,7 @@ export function PatientsTable({ patients, userRole }: PatientsTableProps) {
                     <button
                       suppressHydrationWarning
                       onClick={async () => {
-                        const toastId = toast.loading('Syncing with HIE...')
+                        const toastId = toast.loading('Syncing with CB...')
                         try {
                           const res = await syncPatientToHIE(patient.id)
                           if (res.success) {

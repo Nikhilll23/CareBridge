@@ -1,27 +1,32 @@
 import { AppointmentsClient } from '@/components/modules/appointments/AppointmentsClient'
 import { getAppointments, getAppointmentStats, getDoctors } from '@/actions/appointments'
 import { getPatients } from '@/actions/patients'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { syncUser } from '@/actions/auth'
 import { redirect } from 'next/navigation'
 
 export default async function AppointmentsPage() {
-  const user = await currentUser()
+  const user = await safeCurrentUser()
   if (!user) redirect('/sign-in')
 
   const dbUser = await syncUser()
   if (!dbUser) redirect('/sign-in')
 
-  /* 
-    Fetch data in parallel for performance.
-    Note: getPatients might return empty if user is Doctor and has no patients yet.
-  */
-  const [appointmentsRes, statsRes, doctorsRes, patientsRes] = await Promise.all([
-    getAppointments(),
-    getAppointmentStats(),
-    getDoctors(),
-    getPatients()
-  ])
+  let appointmentsRes: any = { success: true, data: [] }
+  let statsRes: any = { success: true, data: { today: 0, pending: 0, completed: 0, cancelled: 0, inProgress: 0, total: 0 } }
+  let doctorsRes: any = { success: true, data: [] }
+  let patientsRes: any[] = []
+
+  try {
+    ;[appointmentsRes, statsRes, doctorsRes, patientsRes] = await Promise.all([
+      getAppointments(),
+      getAppointmentStats(),
+      getDoctors(),
+      getPatients()
+    ])
+  } catch (err) {
+    console.warn('AppointmentsPage: DB fetch failed, using empty fallback', err)
+  }
 
   return (
     <AppointmentsClient

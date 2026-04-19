@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createLabOrder, getLabOrders, getLabTests, collectSample, submitResult, verifyReport } from '@/actions/lab'
+import { searchPatients } from '@/actions/patients'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,40 +10,63 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
-import { FlaskConical, Syringe, CheckCircle, FileText, AlertTriangle } from 'lucide-react'
+import { FlaskConical, Syringe, CheckCircle, Search } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 export default function LabDashboard() {
-    // State
     const [orders, setOrders] = useState<any[]>([])
     const [view, setView] = useState('PHLEBOTOMY')
     const [tests, setTests] = useState<any[]>([])
-
-    // Order Form
     const [isOrderOpen, setIsOrderOpen] = useState(false)
     const [selectedTests, setSelectedTests] = useState<string[]>([])
     const [patientId, setPatientId] = useState('')
+    const [patientName, setPatientName] = useState('')
+    const [patientSearch, setPatientSearch] = useState('')
+    const [patientResults, setPatientResults] = useState<any[]>([])
 
     useEffect(() => {
         refresh()
         getLabTests().then(setTests)
     }, [])
 
-    const refresh = async () => {
-        // In real app, filter by role-specific status
+    async function refresh() {
         const all = await getLabOrders()
         setOrders(all)
     }
 
     const filteredOrders = (status: string) => orders.filter(o => o.status === status)
 
-    // Actions
+    const handlePatientSearch = async (q: string) => {
+        setPatientSearch(q)
+        setPatientName('')
+        setPatientId('')
+        if (q.length >= 2) {
+            const res = await searchPatients(q)
+            setPatientResults(res)
+        } else {
+            setPatientResults([])
+        }
+    }
+
+    const selectPatient = (p: any) => {
+        setPatientId(p.id)
+        setPatientName(p.name)
+        setPatientSearch(p.name)
+        setPatientResults([])
+    }
+
     const handleCreateOrder = async () => {
-        if (!patientId) return toast.error('Enter Patient ID')
+        if (!patientId) return toast.error('Please select a patient')
+        if (selectedTests.length === 0) return toast.error('Select at least one test')
         await createLabOrder(patientId, selectedTests, 'Doctor-01')
-        toast.success('Order Created & Billed')
+        toast.success('Lab order created successfully')
         setIsOrderOpen(false)
+        setPatientId('')
+        setPatientName('')
+        setPatientSearch('')
+        setSelectedTests([])
         refresh()
     }
 
@@ -77,23 +101,67 @@ export default function LabDashboard() {
                 </h1>
                 <Dialog open={isOrderOpen} onOpenChange={setIsOrderOpen}>
                     <DialogTrigger asChild><Button>+ New Order (Sim)</Button></DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Order Lab Tests</DialogTitle></DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <Input placeholder="Patient UUID" onChange={e => setPatientId(e.target.value)} />
-                            <div className="space-y-2">
-                                <Label>Select Tests:</Label>
-                                {tests.map(t => (
-                                    <div key={t.id} className="flex items-center gap-2">
-                                        <Checkbox onCheckedChange={(c) => {
-                                            c ? setSelectedTests([...selectedTests, t.id]) : setSelectedTests(selectedTests.filter(id => id !== t.id))
-                                        }} />
-                                        <span>{t.test_name} (₹{t.price})</span>
+                    <DialogContent className="max-w-md flex flex-col" style={{ maxHeight: '85vh' }}>
+                        <DialogHeader><DialogTitle>New Lab Order</DialogTitle></DialogHeader>
+                        <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-1">
+                            {/* Patient Search */}
+                            <div className="space-y-1">
+                                <Label>Search Patient</Label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        className="pl-9"
+                                        placeholder="Type name or UHID..."
+                                        value={patientSearch}
+                                        onChange={e => handlePatientSearch(e.target.value)}
+                                    />
+                                </div>
+                                {patientResults.length > 0 && (
+                                    <div className="border rounded-md shadow-md bg-popover max-h-40 overflow-y-auto">
+                                        {patientResults.map(p => (
+                                            <div
+                                                key={p.id}
+                                                className="px-3 py-2 hover:bg-accent cursor-pointer text-sm border-b last:border-0"
+                                                onClick={() => selectPatient(p)}
+                                            >
+                                                <div className="font-medium">{p.name}</div>
+                                                <div className="text-xs text-muted-foreground">{p.uhid}</div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
+                                {patientName && (
+                                    <p className="text-xs text-green-600 font-medium">✓ Selected: {patientName}</p>
+                                )}
+                            </div>
+
+                            {/* Test Selection */}
+                            <div className="space-y-2">
+                                <Label>Select Tests ({selectedTests.length} selected)</Label>
+                                <div className="border rounded-md p-3 space-y-2 max-h-64 overflow-y-auto">
+                                    {tests.map(t => (
+                                        <div key={t.id} className="flex items-center gap-2">
+                                            <Checkbox
+                                                id={t.id}
+                                                checked={selectedTests.includes(t.id)}
+                                                onCheckedChange={(c) => {
+                                                    c ? setSelectedTests([...selectedTests, t.id])
+                                                      : setSelectedTests(selectedTests.filter(id => id !== t.id))
+                                                }}
+                                            />
+                                            <label htmlFor={t.id} className="text-sm cursor-pointer flex-1">
+                                                {t.test_name}
+                                                <span className="text-muted-foreground ml-2">₹{t.price}</span>
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        <DialogFooter><Button onClick={handleCreateOrder}>Submit Order</Button></DialogFooter>
+                        <DialogFooter className="border-t pt-3 mt-2">
+                            <Button variant="outline" onClick={() => setIsOrderOpen(false)}>Cancel</Button>
+                            <Button onClick={handleCreateOrder}>Submit Order</Button>
+                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>

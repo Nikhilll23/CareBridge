@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { supabaseAdmin } from '@/lib/supabase'
 import { RadiologyDashboard } from './RadiologyDashboard'
 
@@ -10,7 +10,7 @@ export const metadata = {
 }
 
 export default async function RadiologyPage() {
-  const user = await currentUser()
+  const user = await safeCurrentUser()
 
   if (!user) {
     redirect('/sign-in')

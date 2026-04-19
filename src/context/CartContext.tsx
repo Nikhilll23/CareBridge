@@ -35,7 +35,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             try {
                 setCart(JSON.parse(saved))
             } catch (e) {
-                console.error('Failed to load cart', e)
+                console.warn('Failed to load cart', e)
             }
         }
         setIsInitialized(true)
@@ -86,7 +86,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export const useCart = () => {
     const context = useContext(CartContext)
     if (context === undefined) {
-        throw new Error('useCart must be used within a CartProvider')
+        // Return safe fallback instead of throwing to prevent hook count mismatch
+        return {
+            cart: [],
+            addToCart: () => {},
+            removeFromCart: () => {},
+            updateQuantity: () => {},
+            clearCart: () => {},
+            totalAmount: '0.00'
+        } as CartContextType
     }
     return context
 }

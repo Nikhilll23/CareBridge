@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { syncUser } from '@/actions/auth'
 import { AppSidebar } from '@/components/shared/AppSidebar'
 import { GlobalAI } from '@/components/shared/GlobalAI'
@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   // Ensure user is authenticated
-  const clerkUser = await currentUser()
+  const clerkUser = await safeCurrentUser()
 
   if (!clerkUser) {
     redirect('/sign-in')
@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 
   if (!userProfile) {
     // If sync fails, still allow access with basic clerk info
-    console.error('Failed to sync user profile - check Supabase connection and run MASTER-SETUP.sql')
+    console.warn('Failed to sync user profile - check Supabase connection and run MASTER-SETUP.sql')
     redirect('/sign-in')
   }
 

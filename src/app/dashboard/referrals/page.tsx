@@ -1,9 +1,9 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
 import { syncUser } from '@/actions/auth'
 
 export default async function ReferralsRedirectPage() {
-    const user = await currentUser()
+    const user = await safeCurrentUser()
     if (!user) redirect('/sign-in')
 
     const dbUser = await syncUser()

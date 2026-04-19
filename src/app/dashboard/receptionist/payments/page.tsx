@@ -1,10 +1,10 @@
 import { getAllPaymentsReceptionist } from '@/actions/receptionist'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
 import { PaymentsListClient } from '@/components/modules/receptionist/PaymentsListClient'
 
 export default async function ReceptionistPaymentsPage() {
-    const user = await currentUser()
+    const user = await safeCurrentUser()
     if (!user) redirect('/sign-in')
 
     const payments = await getAllPaymentsReceptionist()

@@ -52,12 +52,12 @@ export function LiveBedBoard({ userRole }: LiveBedBoardProps) {
         const channel = supabase
             .channel('bed_tracking')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'beds' }, () => {
-                fetchStatus() // Refresh on any bed change
+                fetchStatus()
             })
             .subscribe()
 
         return () => { supabase.removeChannel(channel) }
-    }, [supabase])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleDischarge = async (bedId: string) => {
         toast.promise(dischargePatientFromBed(bedId), {

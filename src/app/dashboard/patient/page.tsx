@@ -3,40 +3,57 @@ import { QuickBook } from '@/components/modules/patient/QuickBook'
 import { SymptomLogger } from '@/components/modules/patient/SymptomLogger'
 import { PatientPaymentSection } from '@/components/modules/patient/PatientPaymentSection'
 import { PrescriptionCard } from '@/components/modules/patient/PrescriptionCard'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { format } from 'date-fns'
+import { safeFormat } from '@/lib/date'
 import { Calendar, FileText, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 export default async function PatientDashboard() {
-    const user = await currentUser()
+    const user = await safeCurrentUser()
     if (!user) redirect('/sign-in')
 
     const data = await getPatientPortalData()
 
-    if (!data) {
+    if (!data || 'error' in data) {
         return (
             <div className="container mx-auto p-8 max-w-4xl">
                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 rounded-lg text-center">
-                    <h2 className="text-lg font-semibold mb-2">Profile Not Linked</h2>
-                    <p>
-                        We couldn't find a patient record with the email <strong>{user.emailAddresses[0]?.emailAddress}</strong>.
+                    <h2 className="text-lg font-semibold mb-2">Patient Dashboard Unavailable</h2>
+                    <p className="font-medium text-red-600 mb-2">
+                        {data?.error || 'Database connection unreachable'}
                     </p>
-                    <p className="mt-2 text-sm">
-                        Please contact the hospital administration to update your file.
+                    <p className="text-sm">
+                        This is usually a temporary issue with your profile synchronization or network.
                     </p>
+                    <p className="mt-2 text-xs opacity-70">
+                        Technical Hint: Verify SUPABASE_SERVICE_ROLE_KEY and RLS policies.
+                    </p>
+                    <a href="/dashboard/patient" className="mt-6 inline-block px-4 py-2 bg-yellow-700 text-white rounded-md text-sm hover:bg-yellow-800">
+                        Try Again
+                    </a>
                 </div>
             </div>
         )
     }
 
-    const { patient, todaysAppointments, futureAppointments, past, totalDue, availableDoctors, invoices, prescriptions, medicalReports, handwrittenNotes } = data
-    const nextFutureVisit = futureAppointments[0]
+    const { 
+        patient, 
+        todaysAppointments = [], 
+        futureAppointments = [], 
+        totalDue = 0, 
+        availableDoctors = [] as any[], 
+        invoices = [] as any[], 
+        prescriptions = [] as any[], 
+        medicalReports = [] as any[], 
+        handwrittenNotes = [] as any[] 
+    } = data as any
+    
+    const nextFutureVisit = (futureAppointments as any[])?.[0]
 
     return (
         <div className="space-y-6">
@@ -64,7 +81,7 @@ export default async function PatientDashboard() {
                                 {todaysAppointments.map((appt: any) => (
                                     <div key={appt.id} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border">
                                         <div>
-                                            <p className="text-lg font-bold">{format(new Date(appt.appointment_date), 'h:mm a')}</p>
+                                            <p className="text-lg font-bold">{safeFormat(appt.appointment_date, 'h:mm a')}</p>
                                             <p className="text-sm text-muted-foreground">{appt.reason || 'General Checkup'}</p>
                                         </div>
                                         <div className="text-right">
@@ -79,8 +96,8 @@ export default async function PatientDashboard() {
                                 <p className="text-sm text-muted-foreground mb-2">No appointments today. Next appointment:</p>
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <div>
-                                        <p className="text-2xl font-bold">{format(new Date(nextFutureVisit.appointment_date), 'EEEE, MMMM do')}</p>
-                                        <p className="text-lg text-muted-foreground">{format(new Date(nextFutureVisit.appointment_date), 'h:mm a')}</p>
+                                        <p className="text-2xl font-bold">{safeFormat(nextFutureVisit.appointment_date, 'EEEE, MMMM do')}</p>
+                                        <p className="text-lg text-muted-foreground">{safeFormat(nextFutureVisit.appointment_date, 'h:mm a')}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-semibold">{nextFutureVisit.doctor?.first_name ? `Dr. ${nextFutureVisit.doctor.first_name} ${nextFutureVisit.doctor.last_name}` : 'Doctor Assigned'}</p>
@@ -96,11 +113,11 @@ export default async function PatientDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Quick Book */}
-                <div className="md:row-span-2 space-y-6">
-                    <QuickBook doctors={availableDoctors} />
-                    <SymptomLogger />
-                </div>
+{/* Quick Book */}
+<div className="md:row-span-2 space-y-6">
+    <QuickBook doctors={availableDoctors} />
+    <SymptomLogger />
+</div>
 
                 {/* Overview Tabs */}
                 <div className="md:col-span-2">
@@ -127,7 +144,7 @@ export default async function PatientDashboard() {
                                                 .map((appt: any) => (
                                                     <div key={appt.id} className="flex justify-between items-center border-b last:border-0 pb-3 last:pb-0">
                                                         <div>
-                                                            <p className="font-medium">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
+                                                            <p className="font-medium">{safeFormat(appt.appointment_date, 'MMM d, yyyy')}</p>
                                                             <p className="text-sm text-muted-foreground">{appt.reason || 'Routine Visit'}</p>
                                                             <p className="text-sm text-muted-foreground">
                                                                 {appt.doctor ? `Dr. ${appt.doctor.first_name} ${appt.doctor.last_name}` : ''}
@@ -157,18 +174,39 @@ export default async function PatientDashboard() {
                                 <CardContent className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
+                                            <p className="text-sm text-muted-foreground">Full Name</p>
+                                            <p className="font-medium">{patient.first_name} {patient.last_name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Gender</p>
+                                            <p className="font-medium">{patient.gender || 'Not set'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Date of Birth</p>
+                                            <p className="font-medium">{safeFormat(patient.date_of_birth, 'MMM d, yyyy')}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Contact</p>
+                                            <p className="font-medium">{patient.contact_number || 'Not set'}</p>
+                                        </div>
+                                        <div>
                                             <p className="text-sm text-muted-foreground">Blood Type</p>
-                                            <p className="font-medium">{patient.blood_type || 'Unknown'}</p>
+                                            <p className="font-medium">{patient.blood_type || <span className="text-muted-foreground italic">Not recorded</span>}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Allergies</p>
-                                            <p className="font-medium">{patient.allergies || 'None Recorded'}</p>
+                                            <p className="font-medium">{patient.allergies || <span className="text-muted-foreground italic">None recorded</span>}</p>
                                         </div>
-                                        <div>
+                                        <div className="col-span-2">
                                             <p className="text-sm text-muted-foreground">Chronic Conditions</p>
-                                            <p className="font-medium text-amber-600">{patient.chronic_conditions || 'None'}</p>
+                                            <p className="font-medium text-amber-600">{patient.chronic_conditions || <span className="text-muted-foreground italic not-italic">None recorded</span>}</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <p className="text-sm text-muted-foreground">Address</p>
+                                            <p className="font-medium">{patient.address || 'Not set'}</p>
                                         </div>
                                     </div>
+                                    <p className="text-xs text-muted-foreground pt-2 border-t">To update your medical profile, contact hospital administration or visit the Settings page.</p>
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -191,7 +229,7 @@ export default async function PatientDashboard() {
                                                     <div key={r.id} className="flex justify-between items-center border-b last:border-0 pb-3 last:pb-0">
                                                         <div>
                                                             <p className="font-medium">{r.title || r.report_type}</p>
-                                                            <p className="text-xs text-muted-foreground">{format(new Date(r.created_at), 'MMM d, yyyy')}</p>
+                                                            <p className="text-xs text-muted-foreground">{safeFormat(r.created_at, 'MMM d, yyyy')}</p>
                                                         </div>
                                                         {r.file_url && (
                                                             <a href={r.file_url} target="_blank" rel="noreferrer">
@@ -218,14 +256,13 @@ export default async function PatientDashboard() {
                                         ) : (
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                                 {handwrittenNotes.map((note: any) => (
-                                                    <div key={note.id} className="border rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                                                        onClick={() => window.open(note.image_data, '_blank')}>
+                                                    <a key={note.id} href={note.image_data} target="_blank" rel="noopener noreferrer" className="block border rounded-lg overflow-hidden hover:opacity-80 transition-opacity">
                                                         <img src={note.image_data} alt={note.title} className="w-full h-28 object-cover" />
                                                         <div className="p-2">
                                                             <p className="text-xs font-medium truncate">{note.title || note.note_type}</p>
-                                                            <p className="text-xs text-muted-foreground">{format(new Date(note.created_at), 'MMM d, yyyy')}</p>
+                                                            <p className="text-xs text-muted-foreground">{safeFormat(note.created_at, 'MMM d, yyyy')}</p>
                                                         </div>
-                                                    </div>
+                                                    </a>
                                                 ))}
                                             </div>
                                         )}

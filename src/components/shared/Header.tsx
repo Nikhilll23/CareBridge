@@ -18,18 +18,24 @@ interface HeaderProps {
   onMenuClick?: () => void
 }
 
-const roleColors: Record<UserRole, string> = {
+const roleColors: Record<UserRole | string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700',
   DOCTOR: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700',
   NURSE: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700',
   PATIENT: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-600',
+  RECEPTIONIST: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700',
+  PHARMACIST: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700',
+  LAB_TECHNICIAN: 'bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700',
 }
 
-const roleLabels: Record<UserRole, string> = {
+const roleLabels: Record<UserRole | string, string> = {
   ADMIN: 'Administrator',
   DOCTOR: 'Doctor',
   NURSE: 'Nurse',
   PATIENT: 'Patient',
+  RECEPTIONIST: 'Receptionist',
+  PHARMACIST: 'Pharmacist',
+  LAB_TECHNICIAN: 'Lab Technician',
 }
 
 export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
@@ -98,7 +104,7 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
               roleColors[userRole]
             )}
           >
-            {roleLabels[userRole]}
+            {roleLabels[userRole] || userRole}
           </div>
 
           {/* Theme Toggle */}
@@ -112,7 +118,7 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
             <div className="text-right">
               <p className="text-sm font-medium text-foreground max-w-[100px] sm:max-w-none truncate">{userName}</p>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                {roleLabels[userRole]}
+                {roleLabels[userRole] || userRole}
               </p>
             </div>
             {mounted && (

@@ -6,100 +6,81 @@ import { revalidatePath } from 'next/cache'
 import { logAuditAction } from '@/actions/audit'
 
 export async function getPatientPortalData() {
+    try {
     const user = await currentUser()
-    if (!user) return null
+    if (!user) return { error: 'Not authenticated with Clerk' }
 
     const userEmail = user.emailAddresses[0]?.emailAddress
-    if (!userEmail) return null
+    if (!userEmail) return { error: 'Clerk email address not found' }
 
-    // 1. Find Patient Record
-    // Check if 'patients' has 'email' column (it wasn't in the types earlier).
-    // If not, I'll assume we need to add it or fail gracefully.
-    // Actually, I'll attempt to select 'email' and see. If it fails, I'll need to add the column.
+    console.log('[Portal] Fetching data for email:', userEmail)
 
-    let { data: patient, error } = await supabaseAdmin
+    const { data: patients, error: patientsError } = await supabaseAdmin
         .from('patients')
         .select('*')
-        .eq('email', userEmail)
-        .single()
+        .ilike('email', userEmail)
+        .order('created_at', { ascending: true })
 
-    // Auto-create if not linked yet (Fix for race conditions)
-    if (!patient) {
-        const { data: newPatient, error: createError } = await supabaseAdmin
-            .from('patients')
-            .insert({
-                first_name: user.firstName || 'Unknown',
-                last_name: user.lastName || 'User',
-                email: userEmail,
-                gender: 'Other',
-                contact_number: 'N/A',
-                address: 'N/A',
-                date_of_birth: new Date().toISOString()
-            })
-            .select()
-            .single()
-
-        if (!createError && newPatient) {
-            patient = newPatient
-            // Best effort audit
-            try {
-                // Dynamic import or separate call to avoid circular issues? 
-                // We'll trust the import works.
-                await logAuditAction('REGISTER_PATIENT', 'PATIENT', 'SYSTEM', { email: userEmail, action: 'AUTO_CREATED_ON_PORTAL' })
-            } catch (e) { /* ignore */ }
-        }
+    if (patientsError) {
+        console.error('[Portal] Supabase patients fetch error:', patientsError)
+        return { error: `Database error: ${patientsError.message}` }
     }
 
-    if (!patient) return null // Truly failed to link
+    console.log(`[Portal] Lookup for ${userEmail} found ${patients?.length || 0} records`)
 
-    // 2. All Appointments
+    const patient = patients?.[0] || null
+
+    if (!patient) {
+        console.warn('[Portal] No patient found for email:', userEmail)
+        // Check if user exists in 'users' table at least
+        const { data: userRecord } = await supabaseAdmin.from('users').select('role').ilike('email', userEmail).single()
+        console.log('[Portal] User record role:', userRecord?.role)
+        
+        return { error: 'Patient clinical record not found. Please contact hospital administration to register your profile.' }
+    }
+
     const { data: allAppointmentsData } = await supabaseAdmin
         .from('appointments')
         .select('*')
         .eq('patient_id', patient.id)
         .order('appointment_date', { ascending: false })
 
-    // Fetch doctors for appointments
     const doctorIds = new Set<string>()
     allAppointmentsData?.forEach(a => { if (a.doctor_id) doctorIds.add(a.doctor_id) })
 
-    const { data: doctorsMap } = await supabaseAdmin
+    const { data: doctorsMap } = doctorIds.size > 0 ? await supabaseAdmin
         .from('users')
         .select('id, first_name, last_name')
-        .in('id', Array.from(doctorIds))
+        .in('id', Array.from(doctorIds)) : { data: [] }
 
     const enhanceAppointment = (appt: any) => {
-        const doc = doctorsMap?.find(d => d.id === appt.doctor_id)
+        const doc = doctorsMap?.find((d: any) => d.id === appt.doctor_id)
         return { ...appt, doctor: doc }
     }
 
     const allAppointments = allAppointmentsData?.map(enhanceAppointment) || []
-    const todaysAppointments = allAppointments
-    const futureAppointments: any[] = []
-    const past: any[] = []
 
-    // 4. Invoices (Wallet)
     const { data: invoices } = await supabaseAdmin
         .from('invoices')
         .select('*')
         .eq('patient_id', patient.id)
         .eq('status', 'PENDING')
 
-    // 5. Available Doctors (exclude sample doctors)
     const { data: doctors } = await supabaseAdmin
         .from('users')
         .select('id, first_name, last_name')
         .eq('role', 'DOCTOR')
         .not('id', 'in', '(user_doctor1_sample,user_doctor2_sample,user_doctor3_sample,user_doctor4_sample,user_doctor5_sample)')
 
-    // 6. Patient Prescriptions
-    const { data: prescriptions } = await supabaseAdmin
+    const { data: prescriptions, error: rxError } = await supabaseAdmin
         .from('prescriptions')
         .select('*')
         .eq('patient_id', patient.id)
         .order('created_at', { ascending: false })
 
-    // 7. Documents: medical reports, handwritten notes
+    if (rxError) console.warn('[Portal] prescriptions error:', rxError.message)
+    console.log('[Portal] patient.id:', patient.id, '| prescriptions found:', prescriptions?.length, prescriptions?.map(p => p.drug_name))
+
     const { data: medicalReports } = await supabaseAdmin
         .from('medical_reports')
         .select('id, title, report_type, created_at, status, file_url')
@@ -117,15 +98,24 @@ export async function getPatientPortalData() {
 
     return {
         patient,
-        todaysAppointments,
-        futureAppointments,
-        past,
+        todaysAppointments: allAppointments,
+        futureAppointments: [],
+        past: [],
         totalDue,
         invoices: invoices || [],
         availableDoctors: doctors || [],
         prescriptions: prescriptions || [],
         medicalReports: medicalReports || [],
         handwrittenNotes: handwrittenNotes || []
+    }
+    } catch (err: any) {
+        console.error('getPatientPortalData failed:', {
+            message: err.message,
+            code: err.code,
+            details: err.details,
+            hint: err.hint
+        })
+        return { error: err.message || 'Database connection failed' }
     }
 }
 
@@ -137,31 +127,16 @@ export async function bookAppointment(data: any) {
         const userEmail = user.emailAddresses[0]?.emailAddress
         if (!userEmail) throw new Error('No email found')
 
-        // Find or auto-create patient record
-        let { data: patient } = await supabaseAdmin
+        // Find patient record — no auto-create to prevent duplicates
+        const { data: patientList } = await supabaseAdmin
             .from('patients')
             .select('id')
             .eq('email', userEmail)
-            .single()
+            .order('created_at', { ascending: true })
+            .limit(1)
 
-        if (!patient) {
-            const { data: newPatient, error: createError } = await supabaseAdmin
-                .from('patients')
-                .insert({
-                    first_name: user.firstName || 'Unknown',
-                    last_name: user.lastName || 'User',
-                    email: userEmail,
-                    gender: 'Other',
-                    contact_number: 'N/A',
-                    address: 'N/A',
-                    date_of_birth: new Date().toISOString()
-                })
-                .select('id')
-                .single()
-
-            if (createError || !newPatient) throw new Error('Failed to create patient profile')
-            patient = newPatient
-        }
+        const patient = patientList?.[0] || null
+        if (!patient) throw new Error('Patient profile not found. Please contact hospital administration.')
 
         // Ensure user record exists with PATIENT role
         await supabaseAdmin

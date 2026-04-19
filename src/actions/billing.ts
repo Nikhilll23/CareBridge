@@ -245,3 +245,43 @@ export async function verifyPaymentDemo(orderId: string) {
 
     return { success: true }
 }
+
+/**
+ * Mark invoice as paid after successful Razorpay payment
+ */
+export async function markInvoicePaid(
+    invoiceId: string | null,
+    paymentId: string,
+    patientId?: string
+) {
+    try {
+        const update = {
+            status: 'PAID',
+            paid_at: new Date().toISOString(),
+            payment_reference: paymentId
+        }
+
+        if (invoiceId) {
+            await supabaseAdmin.from('invoices').update(update).eq('id', invoiceId)
+        } else if (patientId) {
+            // Mark all pending invoices for this patient as paid
+            await supabaseAdmin.from('invoices')
+                .update(update)
+                .eq('patient_id', patientId)
+                .eq('status', 'PENDING')
+        }
+
+        // Update payments table
+        await supabaseAdmin.from('payments')
+            .update({ status: 'PAID', updated_at: new Date().toISOString() })
+            .eq('status', 'PENDING')
+            .eq('patient_id', patientId || '')
+
+        revalidatePath('/dashboard/patient/billing')
+        revalidatePath('/dashboard/patient')
+        return { success: true }
+    } catch (error) {
+        console.warn('markInvoicePaid error:', error)
+        return { success: false }
+    }
+}

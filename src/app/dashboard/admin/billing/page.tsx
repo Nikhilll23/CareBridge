@@ -12,25 +12,25 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Search, Printer, Plus, ShieldAlert, Receipt, CreditCard } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
-import { useUser } from '@clerk/nextjs' // Assuming Auth
+import { useUser } from '@clerk/nextjs'
 
 export default function BillingDashboard() {
+    const { user } = useUser()
     const [patient, setPatient] = useState<any>(null)
     const [billData, setBillData] = useState<any>(null)
 
-    // Search States
     const [patSearch, setPatSearch] = useState('')
     const [foundPats, setFoundPats] = useState<any[]>([])
 
-    // Misc Charge State
     const [tariffSearch, setTariffSearch] = useState('')
     const [tariffResults, setTariffResults] = useState<any[]>([])
 
-    // Discount State
     const [discountAmt, setDiscountAmt] = useState('')
     const [discountReason, setDiscountReason] = useState('')
     const [isDiscountOpen, setIsDiscountOpen] = useState(false)
-    const [adminRoleMock, setAdminRoleMock] = useState('RECEPTIONIST') // Toggle for demo
+
+    // Use real role from Clerk metadata or default to ADMIN for admin page
+    const userRole = 'ADMIN'
 
     // --- Search Patient ---
     const handlePatSearch = async (q: string) => {
@@ -53,8 +53,6 @@ export default function BillingDashboard() {
             setBillData(null)
         }
     }
-
-    // --- Actions ---
     const handleTariffSearch = async (q: string) => {
         setTariffSearch(q)
         if (q.length > 1) {
@@ -74,7 +72,7 @@ export default function BillingDashboard() {
 
     const handleApplyDiscount = async () => {
         if (!billData?.invoice?.id) return
-        const res = await applyDiscount(billData.invoice.id, parseFloat(discountAmt), discountReason, adminRoleMock)
+        const res = await applyDiscount(billData.invoice.id, parseFloat(discountAmt), discountReason, userRole)
         if (res.success) {
             toast.success('Discount Approved & Applied')
             setIsDiscountOpen(false)
@@ -99,19 +97,6 @@ export default function BillingDashboard() {
                     <Receipt className="h-8 w-8 text-primary" />
                     Centralized Billing
                 </h1>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Demo Role:</span>
-                    <Button
-                        variant={adminRoleMock === 'ADMIN' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setAdminRoleMock('ADMIN')}
-                    >Admin</Button>
-                    <Button
-                        variant={adminRoleMock === 'RECEPTIONIST' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setAdminRoleMock('RECEPTIONIST')}
-                    >Receptionist</Button>
-                </div>
             </div>
 
             <div className="grid md:grid-cols-12 gap-6">
@@ -122,11 +107,11 @@ export default function BillingDashboard() {
                         <CardContent>
                             <div className="relative">
                                 <Input placeholder="Search Name/UHID..." onChange={e => handlePatSearch(e.target.value)} />
-                                {foundPats.length > 0 && (
+                                    {foundPats.length > 0 && (
                                     <div className="absolute top-10 w-full bg-white border rounded shadow-lg z-10 p-2">
                                         {foundPats.map(p => (
                                             <div key={p.id} className="p-2 hover:bg-muted cursor-pointer" onClick={() => loadBill(p)}>
-                                                {p.first_name} {p.last_name}
+                                                {p.name} <span className="text-xs text-muted-foreground ml-1">{p.uhid}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -187,7 +172,7 @@ export default function BillingDashboard() {
                                 <div className="grid grid-cols-2 text-sm">
                                     <div>
                                         <p className="font-bold">Bill To:</p>
-                                        <p className="text-lg">{patient.first_name} {patient.last_name}</p>
+                                        <p className="text-lg">{patient.name || `${patient.first_name || ''} ${patient.last_name || ''}`}</p>
                                         <p>UHID: {patient.uhid}</p>
                                     </div>
                                     <div className="text-right">

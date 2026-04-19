@@ -1,17 +1,16 @@
 import type { NextConfig } from "next";
 import dns from "dns";
 
-// Fix ENOTFOUND on Windows - force IPv4 DNS resolution
 dns.setDefaultResultOrder("ipv4first");
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  reactStrictMode: false,
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
     },
   },
+  turbopack: {},
 };
 
 export default nextConfig;

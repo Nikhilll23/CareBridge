@@ -1,12 +1,12 @@
 import { getPatients } from '@/actions/patients'
 import { PatientsTable, AddPatientDialog } from '@/components/modules/patients'
 import { UserPlus, Users } from 'lucide-react'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export default async function PatientsPage() {
   const patients = await getPatients()
-  const user = await currentUser()
+  const user = await safeCurrentUser()
   let userRole = 'PATIENT'
 
   if (user) {
@@ -46,7 +46,7 @@ export default async function PatientsPage() {
           <div className="mt-2 text-2xl font-bold text-foreground">{patients.length}</div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-sm font-medium text-muted-foreground">Synced with HIE</div>
+          <div className="text-sm font-medium text-muted-foreground">Synced with CB</div>
           <div className="mt-2 text-2xl font-bold text-foreground">
             {patients.filter(p => p.metriport_id).length}
           </div>

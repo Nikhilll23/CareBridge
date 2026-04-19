@@ -157,7 +157,7 @@ export function PharmacyCartClient() {
                     <CardTitle className="flex items-center justify-between">
                         <span>Items ({cart.length})</span>
                         <Badge variant="secondary" className="text-lg">
-                            Total: ${totalAmount}
+                            Total: ₹{totalAmount}
                         </Badge>
                     </CardTitle>
                 </CardHeader>
@@ -180,7 +180,7 @@ export function PharmacyCartClient() {
                                             <div>{item.name}</div>
                                             {item.manufacturer && <div className="text-xs text-muted-foreground">{item.manufacturer}</div>}
                                         </TableCell>
-                                        <TableCell>${item.price.toFixed(2)}</TableCell>
+                                        <TableCell>₹{item.price.toFixed(2)}</TableCell>
                                         <TableCell>
                                             <Input
                                                 type="number"
@@ -190,7 +190,7 @@ export function PharmacyCartClient() {
                                                 className="w-20"
                                             />
                                         </TableCell>
-                                        <TableCell>${(item.price * item.quantity).toFixed(2)}</TableCell>
+                                        <TableCell>₹{(item.price * item.quantity).toFixed(2)}</TableCell>
                                         <TableCell>
                                             <Button
                                                 size="sm"
@@ -270,7 +270,7 @@ export function PharmacyCartClient() {
 
                         <div className="p-4 bg-muted rounded-lg">
                             <p className="text-sm font-medium">Total Amount</p>
-                            <p className="text-2xl font-bold">${totalAmount}</p>
+                            <p className="text-2xl font-bold">₹{totalAmount}</p>
                             <p className="text-xs text-muted-foreground mt-1">To: City Hospital Pharmacy</p>
                         </div>
                     </div>

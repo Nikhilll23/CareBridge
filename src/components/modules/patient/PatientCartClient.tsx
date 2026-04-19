@@ -136,10 +136,10 @@ export function PatientCartClient({ items, patientId, patientName }: PatientCart
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div>
                                     <div className="font-medium text-lg">{item.medicine_name}</div>
-                                    <div className="text-sm text-muted-foreground">Qty: {item.quantity} × ${item.price.toFixed(2)}</div>
+                                    <div className="text-sm text-muted-foreground">Qty: {item.quantity} × ₹{item.price.toFixed(2)}</div>
                                 </div>
                                 <div className="font-bold text-lg">
-                                    ${(item.price * item.quantity).toFixed(2)}
+                                    ₹{(item.price * item.quantity).toFixed(2)}
                                 </div>
                             </CardContent>
                         </Card>
@@ -154,15 +154,15 @@ export function PatientCartClient({ items, patientId, patientName }: PatientCart
                         <CardContent className="space-y-4">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Subtotal</span>
-                                <span>${totalAmount.toFixed(2)}</span>
+                                <span>₹{totalAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Taxes</span>
-                                <span>$0.00</span>
+                                <span>₹0.00</span>
                             </div>
                             <div className="border-t pt-4 flex justify-between font-bold text-lg">
                                 <span>Total</span>
-                                <span>${totalAmount.toFixed(2)}</span>
+                                <span>₹{totalAmount.toFixed(2)}</span>
                             </div>
                         </CardContent>
                         <CardFooter>

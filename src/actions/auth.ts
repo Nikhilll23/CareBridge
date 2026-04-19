@@ -54,6 +54,8 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
       'vu1f2223139@pvppcoe.ac.in',
       'vu1f2223123@pvppcoe.ac.in',
       'vu1f2223167@pvppcoe.ac.in',
+      'linmaysvkr@gmail.com',
+      'vu1f2223067@pvppcoe.ac.in',
     ]
 
     if (ADMIN_EMAILS.includes(email)) {

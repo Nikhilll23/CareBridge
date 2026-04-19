@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Users, Stethoscope, UserPlus, Clock } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase'
 import { StaffDirectoryList } from '@/components/modules/staff/StaffDirectoryList'
+import { CreateStaffDialog } from '@/components/modules/staff/CreateStaffDialog'
+import { BroadcastNotificationDialog } from '@/components/modules/staff/BroadcastNotificationDialog'
 
 export default async function StaffPage() {
   const { count: totalStaff } = await supabaseAdmin
@@ -51,10 +53,14 @@ export default async function StaffPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Staff Directory</h1>
           <p className="text-muted-foreground mt-2">Hospital staff management and contact information</p>
+        </div>
+        <div className="flex gap-2">
+          <BroadcastNotificationDialog />
+          <CreateStaffDialog />
         </div>
       </div>
 

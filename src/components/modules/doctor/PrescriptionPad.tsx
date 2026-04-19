@@ -23,13 +23,11 @@ export function PrescriptionPad({ onPrescribe }: PrescriptionPadProps) {
     const [dosage, setDosage] = useState('')
 
     useEffect(() => {
-        // Load inventory for search
         const load = async () => {
             const res = await getInventory()
-            if (res.success && res.data) {
-                setDrugs(res.data)
-                // Identify low stock
-                const low = res.data.filter(d => d.stock_quantity <= d.low_stock_threshold).map(d => d.item_name)
+            if (Array.isArray(res)) {
+                setDrugs(res)
+                const low = res.filter(d => d.stock_quantity <= d.low_stock_threshold).map(d => d.item_name)
                 setLowStockWarnings(low)
             }
         }

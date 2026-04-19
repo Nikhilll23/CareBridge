@@ -5,7 +5,7 @@ import { getPatientBedAllocation } from '@/actions/beds'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Bed, MapPin, Building, Calendar } from 'lucide-react'
-import { format } from 'date-fns'
+import { safeFormat } from '@/lib/date'
 
 interface PatientBedViewProps {
     userEmail: string
@@ -103,10 +103,7 @@ export function PatientBedView({ userEmail }: PatientBedViewProps) {
                                 <div>
                                     <p className="text-sm text-muted-foreground">Allocated On</p>
                                     <p className="font-semibold">
-                                        {format(new Date(allocated_at), 'PPP')}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {format(new Date(allocated_at), 'p')}
+                                        <p className="font-medium">{safeFormat(bedAllocation.allocated_at, 'MMM d, yyyy h:mm a')}</p>
                                     </p>
                                 </div>
                             </div>

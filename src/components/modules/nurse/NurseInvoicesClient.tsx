@@ -117,7 +117,7 @@ export function NurseInvoicesClient() {
                                                 {invoice.patient?.first_name} {invoice.patient?.last_name}
                                             </TableCell>
                                             <TableCell className="font-semibold">
-                                                ${invoice.amount?.toFixed(2)}
+                                                ₹{invoice.amount?.toFixed(2)}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline">

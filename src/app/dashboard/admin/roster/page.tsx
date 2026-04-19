@@ -1,10 +1,10 @@
 import { getDutyRoster, getRosterStats } from '@/actions/roster'
 import { RosterManager } from '@/components/modules/roster/RosterManager'
 import { supabaseAdmin } from '@/lib/supabase'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 
 export default async function DutyRosterPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
-  const user = await currentUser()
+  const user = await safeCurrentUser()
   const resolvedParams = await searchParams
   const dateStr = resolvedParams?.date
   const queryDate = dateStr ? new Date(dateStr) : new Date()

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Mail, Phone, Calendar, Edit2, Trash2 } from 'lucide-react'
 import { UpdateStaffScheduleDialog } from './UpdateStaffScheduleDialog'
+import { EditStaffDialog } from './EditStaffDialog'
 import { deleteUser } from '@/actions/staff'
 import { toast } from 'sonner'
 import {
@@ -33,11 +34,17 @@ interface StaffMember {
 
 export function StaffDirectoryList({ staff }: { staff: StaffMember[] }) {
     const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null)
-    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+    const [isEditOpen, setIsEditOpen] = useState(false)
 
     const handleEdit = (member: StaffMember) => {
         setSelectedStaff(member)
-        setIsDialogOpen(true)
+        setIsEditOpen(true)
+    }
+
+    const handleSchedule = (member: StaffMember) => {
+        setSelectedStaff(member)
+        setIsScheduleOpen(true)
     }
 
     const handleDelete = async (userId: string) => {
@@ -109,8 +116,11 @@ export function StaffDirectoryList({ staff }: { staff: StaffMember[] }) {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-1">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
+                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(member)} title="Edit">
                                                 <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleSchedule(member)} title="Schedule">
+                                                <Calendar className="h-4 w-4" />
                                             </Button>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
@@ -149,8 +159,13 @@ export function StaffDirectoryList({ staff }: { staff: StaffMember[] }) {
 
             <UpdateStaffScheduleDialog
                 member={selectedStaff}
-                open={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
+                open={isScheduleOpen}
+                onOpenChange={setIsScheduleOpen}
+            />
+            <EditStaffDialog
+                member={selectedStaff}
+                open={isEditOpen}
+                onOpenChange={setIsEditOpen}
             />
         </>
     )

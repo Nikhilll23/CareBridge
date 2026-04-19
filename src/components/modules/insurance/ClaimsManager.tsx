@@ -74,7 +74,7 @@ export function ClaimsManager({ claims, patients }: ClaimsManagerProps) {
                                 <TableRow key={claim.id}>
                                     <TableCell className="font-medium">{claim.provider_name}</TableCell>
                                     <TableCell>{claim.policy_number}</TableCell>
-                                    <TableCell>${claim.amount_claimed}</TableCell>
+                                    <TableCell>₹{claim.amount_claimed}</TableCell>
                                     <TableCell>
                                         <Badge variant={
                                             claim.status === 'APPROVED' ? 'default' :

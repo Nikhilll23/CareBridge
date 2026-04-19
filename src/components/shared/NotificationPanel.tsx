@@ -22,11 +22,11 @@ import {
     type NotificationType
 } from '@/actions/notifications'
 import { toast } from 'sonner'
-import { formatDistanceToNow } from 'date-fns'
+import { safeFormatDistanceToNow } from '@/lib/date'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-const notificationIcons: Record<NotificationType, React.ReactNode> = {
+const notificationIcons: Record<string, React.ReactNode> = {
     INFO: <Info className="h-4 w-4 text-blue-500" />,
     SUCCESS: <CheckCircle className="h-4 w-4 text-green-500" />,
     WARNING: <AlertTriangle className="h-4 w-4 text-yellow-500" />,
@@ -36,7 +36,9 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
     SYSTEM: <Settings className="h-4 w-4 text-gray-500" />,
 }
 
-const notificationColors: Record<NotificationType, string> = {
+const defaultIcon = <Bell className="h-4 w-4 text-muted-foreground" />
+
+const notificationColors: Record<string, string> = {
     INFO: 'bg-blue-500/10 border-blue-500/20',
     SUCCESS: 'bg-green-500/10 border-green-500/20',
     WARNING: 'bg-yellow-500/10 border-yellow-500/20',
@@ -45,6 +47,8 @@ const notificationColors: Record<NotificationType, string> = {
     PATIENT: 'bg-teal-500/10 border-teal-500/20',
     SYSTEM: 'bg-gray-500/10 border-gray-500/20',
 }
+
+const defaultColor = 'bg-muted/10 border-muted/20'
 
 export function NotificationPanel() {
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -252,9 +256,9 @@ function NotificationItem({
             {/* Icon */}
             <div className={cn(
                 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border',
-                notificationColors[notification.type]
+                notificationColors[notification.type] || defaultColor
             )}>
-                {notificationIcons[notification.type]}
+                {notificationIcons[notification.type] || defaultIcon}
             </div>
 
             {/* Content */}
@@ -268,8 +272,8 @@ function NotificationItem({
                 <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                     {notification.message}
                 </p>
-                <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                <p suppressHydrationWarning className="text-[10px] text-muted-foreground/70 mt-1">
+                    {safeFormatDistanceToNow(notification.created_at, { addSuffix: true })}
                 </p>
             </div>
 

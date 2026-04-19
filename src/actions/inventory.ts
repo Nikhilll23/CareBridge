@@ -21,10 +21,17 @@ export interface InventoryItem {
 }
 
 export async function getInventory() {
-  const { data, error } = await supabaseAdmin.from('pharmacy_inventory').select('*').order('drug_name')
+  const { data, error } = await supabaseAdmin
+    .from('pharmacy_inventory')
+    .select('*')
+    .order('drug_name')
 
-  if (error) console.warn('getInventory Error:', error)
-  console.log('getInventory Data:', data?.length)
+  if (error) {
+    console.error('[Inventory] getInventory Error:', error.message, error)
+    return []
+  }
+
+  console.log('[Inventory] getInventory found:', data?.length || 0, 'items')
 
   // Map fields for consistency
   return (data || []).map(d => ({

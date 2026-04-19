@@ -48,7 +48,7 @@ export default function OTDashboard() {
         })
     }, [])
 
-    const refresh = () => {
+    function refresh() {
         getSurgeries().then(data => {
             setSurgeries(data)
             if (activeSurgery) {

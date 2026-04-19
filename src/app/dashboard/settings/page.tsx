@@ -1,10 +1,10 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
 import { SettingsManager } from '@/components/modules/settings/SettingsManager'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export default async function SettingsPage() {
-  const user = await currentUser()
+  const user = await safeCurrentUser()
 
   if (!user) {
     redirect('/sign-in')

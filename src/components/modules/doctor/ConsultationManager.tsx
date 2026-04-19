@@ -405,7 +405,7 @@ export function ConsultationManager({ isOpen, onClose, appointment }: Consultati
                     <DialogFooter>
                         <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
                         <Button onClick={handleComplete} disabled={loading}>
-                            {loading ? 'Saving...' : 'Complete Consultation'}
+                            {loading ? 'Saving...' : `Complete Consultation${medicines.length > 0 ? ` (${medicines.length} medicine${medicines.length > 1 ? 's' : ''})` : ''}`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

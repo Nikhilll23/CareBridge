@@ -67,6 +67,7 @@ export function PharmacyDashboard({
   stats,
 }: PharmacyDashboardProps) {
   const router = useRouter()
+  const now = Date.now()
   const [searchQuery, setSearchQuery] = useState('')
   const [dispenseDialogOpen, setDispenseDialogOpen] = useState(false)
   const [fdaPanelOpen, setFdaPanelOpen] = useState(false)
@@ -283,7 +284,7 @@ export function PharmacyDashboard({
                       {item.expiry_date ? format(new Date(item.expiry_date), 'MMM dd, yyyy') : 'No date'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Expires in {Math.ceil((new Date(item.expiry_date!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
+                      Expires in {Math.ceil((new Date(item.expiry_date!).getTime() - now) / (1000 * 60 * 60 * 24))} days
                     </p>
                   </div>
                 </div>
@@ -390,7 +391,7 @@ export function PharmacyDashboard({
                       {item.expiry_date ? (
                         <div>
                           <p>{format(new Date(item.expiry_date), 'MMM dd, yyyy')}</p>
-                          {new Date(item.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
+                          {new Date(item.expiry_date) < new Date(now + 30 * 24 * 60 * 60 * 1000) && (
                             <p className="text-xs text-orange-500">Expiring soon</p>
                           )}
                         </div>

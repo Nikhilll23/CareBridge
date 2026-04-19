@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Pill, Search, Plus, ShoppingCart } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
 import { getInventory } from '@/actions/inventory'
 
@@ -20,6 +19,8 @@ export function NursePharmacyClient({ role = 'nurse' }: { role?: 'nurse' | 'rece
     const [patientSearch, setPatientSearch] = useState('')
     const [selectedPatient, setSelectedPatient] = useState<any>(null)
     const [patientResults, setPatientResults] = useState<any[]>([])
+    const [showPatientModal, setShowPatientModal] = useState(false)
+    const [pendingMedicine, setPendingMedicine] = useState<any>(null)
 
     // Inventory dropdown state
     const [inventory, setInventory] = useState<any[]>([])
@@ -76,9 +77,6 @@ export function NursePharmacyClient({ role = 'nurse' }: { role?: 'nurse' | 'rece
 
     // We don't use the client context anymore for Receptionist add-to-cart in this new flow
     // const { addToCart, cart } = useCart() 
-
-    const [showPatientModal, setShowPatientModal] = useState(false)
-    const [pendingMedicine, setPendingMedicine] = useState<any>(null)
 
     const handlePatientSearch = (query: string) => {
         setPatientSearch(query)

@@ -91,31 +91,34 @@ export async function updateConsultation(appointmentId: string, notes: string, p
         // 1. Update Appointment Notes & Status
         const { error: apptError } = await supabaseAdmin
             .from('appointments')
-            .update({
-                reason: notes,
-                status: 'COMPLETED'
-            })
+            .update({ reason: notes, status: 'COMPLETED' })
             .eq('id', appointmentId)
 
         if (apptError) throw apptError
 
-        // 2. Get patient_id once
-        const { data: apptData } = await supabaseAdmin
+        // 2. Get patient_id from appointment
+        const { data: apptData, error: apptFetchErr } = await supabaseAdmin
             .from('appointments')
             .select('patient_id')
             .eq('id', appointmentId)
             .single()
 
-        const patientId = apptData?.patient_id
+        if (apptFetchErr) console.warn('Failed to fetch appointment patient_id:', apptFetchErr.message)
 
-        // 3. Handle prescriptions — supports both single object and array
+        const patientId = apptData?.patient_id
+        console.log('[Consultation] patientId:', patientId, '| appointmentId:', appointmentId)
+
+        // 3. Handle prescriptions
         const medicines: any[] = prescriptionData
             ? Array.isArray(prescriptionData) ? prescriptionData : [prescriptionData]
             : []
 
+        console.log('[Consultation] medicines count:', medicines.length, medicines.map(m => m.drugName))
+
         for (const med of medicines) {
             if (!med.drugName) continue
 
+            // Save prescription
             const { error: rxError } = await supabaseAdmin
                 .from('prescriptions')
                 .insert({
@@ -127,20 +130,18 @@ export async function updateConsultation(appointmentId: string, notes: string, p
                     duration: med.duration || '',
                     instructions: med.instructions || ''
                 })
+            if (rxError) console.warn('[Consultation] Prescription insert failed:', rxError.message, rxError.details)
 
-            if (rxError) {
-                console.warn('Prescription insert error:', rxError)
-                throw rxError
-            }
-
-            // Deduct from pharmacy_inventory by drug_name
-            const { data: inventoryItem } = await supabaseAdmin
+            // Find inventory item
+            const { data: inventoryItem, error: invLookupErr } = await supabaseAdmin
                 .from('pharmacy_inventory')
                 .select('id, quantity, price_per_unit')
-                .eq('drug_name', med.drugName)
-                .order('expiry_date', { ascending: true })
+                .ilike('drug_name', `%${med.drugName}%`)
                 .limit(1)
-                .single()
+                .maybeSingle()
+
+            if (invLookupErr) console.warn('[Consultation] Inventory lookup failed:', invLookupErr.message)
+            console.log('[Consultation] inventoryItem for', med.drugName, ':', inventoryItem?.id, '₹', inventoryItem?.price_per_unit)
 
             if (inventoryItem) {
                 await supabaseAdmin
@@ -149,9 +150,9 @@ export async function updateConsultation(appointmentId: string, notes: string, p
                     .eq('id', inventoryItem.id)
             }
 
-            // Add to patient's pharmacy cart
+            // Add to cart
             if (patientId) {
-                await supabaseAdmin
+                const { error: cartError } = await supabaseAdmin
                     .from('pharmacy_cart_items')
                     .insert({
                         patient_id: patientId,
@@ -161,27 +162,80 @@ export async function updateConsultation(appointmentId: string, notes: string, p
                         quantity: 1,
                         status: 'PENDING'
                     })
+                if (cartError) {
+                    console.warn('[Consultation] Cart insert FAILED:', cartError.message, cartError.details, cartError.hint)
+                } else {
+                    console.log('[Consultation] Cart insert SUCCESS for:', med.drugName)
+                }
+            } else {
+                console.warn('[Consultation] No patientId — skipping cart insert')
             }
         }
 
         // Log Audit
-        await logAuditAction(
-            'COMPLETE_CONSULTATION',
-            'APPOINTMENTS',
-            appointmentId,
-            {
-                notesLength: notes.length,
-                prescriptionIssued: medicines.length > 0,
-                medicinesCount: medicines.length,
-                completedBy: user.emailAddresses[0]?.emailAddress
-            }
-        )
+        await logAuditAction('COMPLETE_CONSULTATION', 'APPOINTMENTS', appointmentId, {
+            notesLength: notes.length,
+            prescriptionIssued: medicines.length > 0,
+            medicinesCount: medicines.length,
+            completedBy: user.emailAddresses[0]?.emailAddress
+        })
 
         revalidatePath('/dashboard/doctor')
         revalidatePath('/dashboard/patient')
+        revalidatePath('/dashboard/patient/cart')
+
+        // Auto-create consultation invoice
+        if (patientId) {
+            try {
+                let invoiceId: string | null = null
+
+                const { data: existingInvoice } = await supabaseAdmin
+                    .from('invoices')
+                    .select('id')
+                    .eq('patient_id', patientId)
+                    .eq('status', 'PENDING')
+                    .maybeSingle()
+
+                if (existingInvoice) {
+                    invoiceId = existingInvoice.id
+                } else {
+                    const { data: newInvoice, error: invErr } = await supabaseAdmin
+                        .from('invoices')
+                        .insert({ patient_id: patientId, amount: 0, status: 'PENDING' })
+                        .select('id')
+                        .single()
+                    if (invErr) console.warn('[Consultation] Invoice create failed:', invErr.message)
+                    invoiceId = newInvoice?.id || null
+                }
+
+                console.log('[Consultation] invoiceId:', invoiceId)
+
+                if (invoiceId) {
+                    const { error: itemErr } = await supabaseAdmin
+                        .from('invoice_items')
+                        .insert({
+                            invoice_id: invoiceId,
+                            description: `Consultation Fee - ${new Date().toLocaleDateString('en-IN')}`,
+                            quantity: 1,
+                            unit_price: 500,
+                            source_module: 'CONSULTATION'
+                        })
+                    if (itemErr) console.warn('[Consultation] Invoice item failed:', itemErr.message, itemErr.details)
+                    else console.log('[Consultation] Invoice item SUCCESS ₹500')
+
+                    const { data: items } = await supabaseAdmin
+                        .from('invoice_items').select('total_price').eq('invoice_id', invoiceId)
+                    const total = items?.reduce((s, i) => s + Number(i.total_price), 0) || 500
+                    await supabaseAdmin.from('invoices').update({ amount: total }).eq('id', invoiceId)
+                }
+            } catch (invoiceErr) {
+                console.warn('[Consultation] Invoice block failed:', invoiceErr)
+            }
+        }
+
         return { success: true }
     } catch (error) {
-        console.warn('Consultation Error:', error)
+        console.warn('[Consultation] FATAL error:', error)
         return { success: false, error: 'Failed to save consultation' }
     }
 }

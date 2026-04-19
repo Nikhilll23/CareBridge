@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import ClerkProviderWrapper from "@/components/providers/ClerkProviderWrapper";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -49,7 +50,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
             <Toaster richColors position="top-right" />
           </ThemeProvider>
         </body>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { FileText, Download, Send, Eye, Search } from 'lucide-react'
-import { format } from 'date-fns'
+import { safeFormat } from '@/lib/date'
 import { sendReportToPatient } from '@/actions/reports'
 import { toast } from 'sonner'
 import jsPDF from 'jspdf'
@@ -139,7 +139,7 @@ export function DoctorReportsClient({ reports }: DoctorReportsClientProps) {
                                             <span>•</span>
                                             <span>UHID: {report.patient?.uhid}</span>
                                             <span>•</span>
-                                            <span>{format(new Date(report.created_at), 'PPP')}</span>
+                                            <span>{safeFormat(report.created_at, 'MMM d, yyyy')}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">

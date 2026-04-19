@@ -187,8 +187,8 @@ export async function registerPatient(data: PatientFormValues) {
         metriport_id: metriportId,
       },
       message: metriportId
-        ? 'Patient registered and synced with HIE'
-        : 'Patient registered (HIE sync pending - please retry later)',
+        ? 'Patient registered and synced with CB'
+        : 'Patient registered (CB sync pending - please retry later)',
     }
 
   } catch (error) {
@@ -274,7 +274,7 @@ export async function syncPatientToHIE(patientId: string) {
     )
 
     revalidatePath('/dashboard/patients')
-    return { success: true, message: 'Patient successfully synced to HIE' }
+    return { success: true, message: 'Patient successfully synced to CB' }
   } catch (error) {
     console.warn('Error syncing patient to HIE:', error)
     return { success: false, error: 'Failed to sync with HIE' }

@@ -12,36 +12,55 @@ export interface DiagnosisData {
 }
 
 // --- Search ---
+/**
+ * Search ICD-10 codes from the local cached table
+ */
 export async function searchICD10Local(query: string) {
-    const { data } = await supabaseAdmin
-        .from('diagnosis_codes')
-        .select('*')
-        .or(`code.ilike.%${query}%,description.ilike.%${query}%`)
-        .limit(20)
-    return data || []
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('diagnosis_codes')
+            .select('*')
+            .or(`code.ilike.%${query}%,description.ilike.%${query}%`)
+            .limit(20)
+        
+        if (error) throw error
+        return data || []
+    } catch (err) {
+        console.error('Error searching ICD10:', err)
+        return []
+    }
 }
 
+/**
+ * Search procedure codes (CPT) from the local cached table
+ */
 export async function searchProceduresLocal(query: string) {
-    const { data } = await supabaseAdmin
-        .from('procedure_codes')
-        .select('*')
-        .or(`code.ilike.%${query}%,description.ilike.%${query}%`)
-        .limit(20)
-    return data || []
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('procedure_codes')
+            .select('*')
+            .or(`code.ilike.%${query}%,description.ilike.%${query}%`)
+            .limit(20)
+        
+        if (error) throw error
+        return data || []
+    } catch (err) {
+        console.error('Error searching procedures:', err)
+        return []
+    }
 }
 
 // --- The Core Logic: Finalize & Bill ---
+/**
+ * Finalize clinical coding and trigger billing/invoice generation
+ */
 export async function finalizeDiagnosis(data: DiagnosisData) {
     try {
         // 1. Update Medical Record
-        // We assume 'visitId' maps to the 'id' of medical_records for this context, 
-        // or we create one if it doesn't exist (Upsert logic).
-
-        // For this demo, let's look for an existing record or create one.
         const { data: mr, error: mrError } = await supabaseAdmin
             .from('medical_records')
             .upsert({
-                id: data.visitId, // Assuming visitId IS the medical_record id. If not, we'd use visit_id column.
+                id: data.visitId && data.visitId !== 'DUMMY_VISIT_ID' ? data.visitId : undefined, 
                 patient_id: data.patientId,
                 icd_code: data.icdCode,
                 procedure_code: data.procedureCode,
@@ -53,36 +72,36 @@ export async function finalizeDiagnosis(data: DiagnosisData) {
         if (mrError) throw new Error(`Medical Record Error: ${mrError.message}`)
 
         // 2. Auto-Billing Logic
-        // 2a. Get Price
-        const { data: proc } = await supabaseAdmin
+        const { data: proc, error: procError } = await supabaseAdmin
             .from('procedure_codes')
             .select('base_price, description')
             .eq('code', data.procedureCode)
             .single()
 
-        if (!proc) throw new Error('Invalid Procedure Code')
+        if (procError || !proc) throw new Error('Invalid Procedure Code or Price not found')
 
         const price = proc.base_price || 0
 
-        // 2b. Find or Create Active Invoice (PENDING)
+        // 3. Find or Create Active Invoice (PENDING)
         let invoiceId
         const { data: activeInvoice } = await supabaseAdmin
             .from('invoices')
             .select('id')
             .eq('patient_id', data.patientId)
             .eq('status', 'PENDING')
-            .single()
+            .limit(1)
+            .maybeSingle()
 
         if (activeInvoice) {
             invoiceId = activeInvoice.id
         } else {
-            // Create new invoice
+            // Create new invoice if no pending one found
             const { data: newInv, error: invError } = await supabaseAdmin
                 .from('invoices')
                 .insert({
                     patient_id: data.patientId,
                     status: 'PENDING',
-                    amount: 0 // Will auto-sum usually, or we update it
+                    amount: 0 
                 })
                 .select()
                 .single()
@@ -91,7 +110,7 @@ export async function finalizeDiagnosis(data: DiagnosisData) {
             invoiceId = newInv.id
         }
 
-        // 2c. Add Invoice Item
+        // 4. Add Invoice Item
         const { error: itemError } = await supabaseAdmin
             .from('invoice_items')
             .insert({
@@ -103,50 +122,66 @@ export async function finalizeDiagnosis(data: DiagnosisData) {
 
         if (itemError) throw new Error(`Billing Item Error: ${itemError.message}`)
 
-        // 2d. Update Invoice Total amount (simple increment)
-        // In a real trigger-based DB, this might happen automatically.
-        // We'll simplisticly increment it here for the UI feedback.
-        await supabaseAdmin.rpc('increment_invoice_total', { inv_id: invoiceId, amount: price })
-        // Fallback if RPC doesn't exist: ignore, assuming future fetch recalculates.
+        // 5. Update Invoice Total amount
+        // Attempting RPC update, failing gracefully if function doesn't exist
+        try {
+            await supabaseAdmin.rpc('increment_invoice_total', { inv_id: invoiceId, amount: price })
+        } catch (rpcErr) {
+            console.warn('RPC increment_invoice_total failed, check database functions:', rpcErr)
+        }
 
         revalidatePath('/dashboard/coding')
         return {
             success: true,
-            message: `Coded & Billed: $${price} added to invoice.`
+            message: `Coded & Billed: ₹${price.toLocaleString()} added to invoice.`
         }
 
     } catch (error: any) {
-        console.warn(error)
+        console.error('FinalizeDiagnosis Error:', error.message)
         return { success: false, error: error.message }
     }
 }
 
-// --- Helper for Mandatory Check ---
+/**
+ * Check if a visit/record has been coded
+ */
 export async function checkCodingStatus(visitId: string) {
-    const { data } = await supabaseAdmin
+    if (!visitId || visitId === 'DUMMY_VISIT_ID') return false
+    
+    const { data, error } = await supabaseAdmin
         .from('medical_records')
         .select('icd_code')
         .eq('id', visitId)
-        .single()
+        .maybeSingle()
 
-    // If we have a record and icd_code is present, it's coded.
+    if (error) return false
     return !!(data && data.icd_code)
 }
 
+/**
+ * Get recent coding history
+ */
 export async function getCodingHistory() {
-    const { data } = await supabaseAdmin
-        .from('medical_records')
-        .select(`
-            *,
-            patients (first_name, last_name)
-        `)
-        .order('updated_at', { ascending: false })
-        .limit(10)
-    
-    return (data || []).map(h => ({
-        ...h,
-        bill_amount: 0, // Placeholder
-        status: h.icd_code ? 'FINALIZED' : 'DRAFT',
-        coded_at: h.updated_at
-    }))
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('medical_records')
+            .select(`
+                *,
+                patients (first_name, last_name)
+            `)
+            .order('updated_at', { ascending: false })
+            .limit(10)
+        
+        if (error) throw error
+        
+        return (data || []).map(h => ({
+            ...h,
+            bill_amount: 0, // In production, this would be summed from invoice_items
+            status: h.icd_code ? 'FINALIZED' : 'DRAFT',
+            coded_at: h.updated_at
+        }))
+    } catch (err) {
+        console.error('Error fetching coding history:', err)
+        return []
+    }
 }

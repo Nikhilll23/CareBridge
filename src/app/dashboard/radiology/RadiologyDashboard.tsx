@@ -84,7 +84,7 @@ function SavedStudiesSection({ onView }: { onView: (study: any) => void }) {
     loadSavedStudies()
   }, [])
 
-  const loadSavedStudies = async () => {
+  async function loadSavedStudies() {
     const data = await getSavedTCIAStudies()
     setSavedStudies(data)
     setLoading(false)
@@ -232,7 +232,7 @@ export function RadiologyDashboard({ isAdmin, currentUserId, userFullName }: Rad
     loadCollections()
   }, [])
 
-  const loadData = async () => {
+  async function loadData() {
     setLoading(true)
     const [reportsResult, statsResult] = await Promise.all([
       getRadiologyReports(),
@@ -251,7 +251,7 @@ export function RadiologyDashboard({ isAdmin, currentUserId, userFullName }: Rad
     setLoading(false)
   }
 
-  const loadCollections = async () => {
+  async function loadCollections() {
     const result = await browsePublicCollections()
     if (result.success && result.data) {
       setCollections(result.data)

@@ -116,9 +116,17 @@ export async function getPendingPrescriptions() {
             *,
             patients (first_name, last_name)
         `)
-        .eq('status', 'PENDING')
         .order('created_at', { ascending: true })
-    return data || []
+
+    // Map drug_name → medication for pharmacy page compatibility
+    return (data || []).map(p => ({
+        ...p,
+        medication: p.drug_name,
+        dose: p.dosage,
+        route: 'Oral',
+        frequency: p.frequency,
+        duration: p.duration,
+    }))
 }
 
 export async function getInventory(drugName?: string) {

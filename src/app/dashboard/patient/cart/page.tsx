@@ -1,36 +1,41 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase'
 import { PatientCartClient } from '@/components/modules/patient/PatientCartClient'
 
 export default async function PatientCartPage() {
-    const user = await currentUser()
-
-    if (!user) {
-        redirect('/sign-in')
-    }
+    const user = await safeCurrentUser()
+    if (!user) redirect('/sign-in')
 
     const email = user.emailAddresses[0]?.emailAddress
-    const supabase = await createClient()
+    if (!email) redirect('/sign-in')
 
-    // 1. Get Patient ID from email
-    const { data: patient } = await supabase
+    // Get Patient — use oldest record (avoid duplicate issue)
+    const { data: patients } = await supabaseAdmin
         .from('patients')
         .select('id, first_name, last_name, uhid')
         .eq('email', email)
-        .single()
+        .order('created_at', { ascending: true })
+        .limit(1)
+
+    const patient = patients?.[0]
 
     if (!patient) {
         return (
             <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-                <p className="text-muted-foreground">Your account is not linked to a patient record. Please contact reception.</p>
+                <h1 className="text-2xl font-bold text-red-500">Profile Not Found</h1>
+                <p className="text-muted-foreground mt-2">
+                    No patient record found for <strong>{email}</strong>.
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Please contact hospital administration.
+                </p>
             </div>
         )
     }
 
-    // 2. Get Cart Items
-    const { data: cartItems } = await supabase
+    // Get Cart Items using admin client (bypasses RLS)
+    const { data: cartItems } = await supabaseAdmin
         .from('pharmacy_cart_items')
         .select('*')
         .eq('patient_id', patient.id)

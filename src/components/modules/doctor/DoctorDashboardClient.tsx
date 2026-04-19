@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { ConsultationManager } from './ConsultationManager'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
+import { safeFormat } from '@/lib/date'
 
 interface DoctorDashboardClientProps {
     stats: any
@@ -80,7 +80,7 @@ export function DoctorDashboardClient({ stats, appointments, doctorName }: Docto
                                             <div>
                                                 <p className="font-medium">{appt.patients?.first_name} {appt.patients?.last_name}</p>
                                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <span>{format(new Date(appt.appointment_date), 'h:mm a')}</span>
+                                                    <span>{safeFormat(appt.appointment_date, 'h:mm a')}</span>
                                                     <span>•</span>
                                                     <span>{appt.reason || 'Regular Checkup'}</span>
                                                 </div>

@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getPatientById, getNearbyAmbulances, getPatientClinicalData, getPatientDocuments } from '@/actions/patients'
@@ -34,7 +34,7 @@ interface PageProps {
 
 export default async function PatientProfilePage({ params }: PageProps) {
   const { id } = await params
-  const user = await currentUser()
+  const user = await safeCurrentUser()
   const patient = await getPatientById(id)
 
   if (!patient) {
@@ -78,7 +78,7 @@ export default async function PatientProfilePage({ params }: PageProps) {
               {patient.metriport_id && (
                 <Badge variant="default" className="bg-green-600">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  HIE Synced
+                  CB Synced
                 </Badge>
               )}
             </div>
@@ -294,7 +294,7 @@ export default async function PatientProfilePage({ params }: PageProps) {
               <CardContent>
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <AlertCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">HIE Sync Required</h3>
+                  <h3 className="text-lg font-semibold mb-2">CB Sync Required</h3>
                   <p className="text-sm text-muted-foreground max-w-sm">
                     This patient needs to be synced with the Health Information Exchange network
                     to access clinical history data.
@@ -325,7 +325,7 @@ export default async function PatientProfilePage({ params }: PageProps) {
               <CardContent>
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <AlertCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">HIE Sync Required</h3>
+                  <h3 className="text-lg font-semibold mb-2">CB Sync Required</h3>
                   <p className="text-sm text-muted-foreground max-w-sm">
                     This patient needs to be synced with the Health Information Exchange network
                     to access medical documents.

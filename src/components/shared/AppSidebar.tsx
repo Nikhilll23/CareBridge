@@ -1,37 +1,14 @@
 'use client'
 
-import { motion, type HTMLMotionProps } from 'framer-motion'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  Settings,
-  Activity,
-  ChevronLeft,
-  ChevronRight,
-  Pill,
-  ActivitySquare,
-  Brain,
-  Map,
-  UserCheck,
-  CalendarClock,
-  DollarSign,
-  ShieldCheck,
-  FileText,
-  BarChart3,
-  Bed,
-  FlaskConical,
-  Scissors,
-  Package,
-  AlertTriangle,
-  Receipt,
-  Wrench,
-  Heart,
-  Stethoscope,
-  ClipboardList,
-  ShoppingCart
+  LayoutDashboard, Calendar, Users, Settings, Activity,
+  ChevronLeft, ChevronRight, Pill, ActivitySquare, Brain, Map,
+  UserCheck, CalendarClock, DollarSign, ShieldCheck, FileText,
+  BarChart3, Bed, FlaskConical, Scissors, Package, AlertTriangle,
+  Receipt, Wrench, Stethoscope, ClipboardList, ShoppingCart
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -39,7 +16,6 @@ import { Separator } from '@/components/ui/separator'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { NavItem } from '@/types'
-import { useState, useMemo, useEffect } from 'react'
 import { getPatientBedAllocation } from '@/actions/beds'
 
 
@@ -189,6 +165,11 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/patient/reports',
     icon: FileText,
   },
+  {
+    title: 'Medical Reports',
+    href: '/dashboard/admin/reports',
+    icon: FileText,
+  },
 
   {
     title: 'Revenue & Claims',
@@ -331,31 +312,22 @@ export const shouldShowItem = (item: NavItem, role?: string) => {
 
   // Default fallback for Admin (sees everything except AI Assistant and specific role dashboards)
   if (userRole === 'ADMIN') {
-    // Admins don't need AI Assistant - it's for doctors and patients
     if (item.href === '/dashboard/ai') return false
-
-    // Hide Referrals (User requested removal)
     if (item.href.includes('referrals')) return false
-
-    // Hide Nursing Modules (User requested removal)
     if (item.href.startsWith('/dashboard/nurse/')) return false
-
-    // Hide Diagnostic Lab (User requested removal)
     if (item.href === '/dashboard/lab') return false
-
-    // Hide Patient Billing/Payments (User requested removal)
     if (item.title === 'Billing & Payments') return false
-
-    // Hide Radiology (User requested removal)
     if (item.href === '/dashboard/radiology') return false
-
+    // Admin uses their own reports page
+    if (item.href === '/dashboard/patient/reports') return false
+    if (item.href === '/dashboard/doctor/reports') return false
     return true
   }
 
   return false
 }
 
-interface AppSidebarProps extends HTMLMotionProps<'div'> {
+interface AppSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   userRole?: string
   userEmail?: string
 }
@@ -365,7 +337,6 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [bedAllocation, setBedAllocation] = useState<any>(null)
 
-  // Fetch bed allocation for patients
   useEffect(() => {
     if (userRole === 'PATIENT' && userEmail) {
       getPatientBedAllocation(userEmail)
@@ -374,17 +345,12 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
     }
   }, [userRole, userEmail])
 
-  // Memoize filtered items to ensure consistent rendering during hydration
-  const filteredNavItems = useMemo(() => {
-    return navigationItems.filter(item => shouldShowItem(item, userRole))
-  }, [userRole])
+  const filteredNavItems = navigationItems.filter(item => shouldShowItem(item, userRole))
 
   return (
-    <motion.div
+    <div
       suppressHydrationWarning
-      initial={{ width: 256 }}
-      animate={{ width: isCollapsed ? 80 : 256 }}
-      transition={{ duration: 0.2, ease: 'easeInOut' }}
+      style={{ width: isCollapsed ? 80 : 256, transition: 'width 0.2s ease' }}
       className={cn(
         'relative flex flex-col border-r border-border bg-card pb-4 pt-6 text-card-foreground',
         className
@@ -427,15 +393,15 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Ward:</span>
-                  <span className="font-medium">{bedAllocation.bed?.ward?.name}</span>
+                  <span className="font-medium">{bedAllocation.bed?.ward?.name || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Bed:</span>
-                  <span className="font-medium">{bedAllocation.bed?.bed_number}</span>
+                  <span className="font-medium">{bedAllocation.bed?.bed_number || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Type:</span>
-                  <Badge variant="outline" className="h-4 text-[10px]">{bedAllocation.bed?.type}</Badge>
+                  <Badge variant="outline" className="h-4 text-[10px]">{bedAllocation.bed?.type || 'Standard'}</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Floor:</span>
@@ -484,6 +450,6 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }

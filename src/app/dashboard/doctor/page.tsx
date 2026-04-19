@@ -1,19 +1,28 @@
 import { getDoctorStats, getDoctorAppointments } from '@/actions/doctor'
 import { DoctorDashboardClient } from '@/components/modules/doctor/DoctorDashboardClient'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
 
 export default async function DoctorDashboard() {
-    const user = await currentUser()
+    const user = await safeCurrentUser()
     if (!user) redirect('/sign-in')
 
-    const stats = await getDoctorStats()
-    const appointments = await getDoctorAppointments()
+    let stats = null
+    let appointments: any[] = []
+
+    try {
+        ;[stats, appointments] = await Promise.all([
+            getDoctorStats(),
+            getDoctorAppointments()
+        ])
+    } catch (err) {
+        console.warn('DoctorDashboard: DB fetch failed', err)
+    }
 
     if (!stats) {
         return (
             <div className="p-8 text-center text-muted-foreground">
-                Account not linked to a Doctor profile.
+                Could not load doctor profile. Please refresh the page.
             </div>
         )
     }

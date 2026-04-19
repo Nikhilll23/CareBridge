@@ -36,7 +36,7 @@ async function getCurrentUserId(): Promise<string | null> {
     const { data } = await supabaseAdmin
         .from('users')
         .select('id')
-        .eq('clerk_id', clerkUser.id)
+        .eq('id', clerkUser.id)
         .single()
 
     return data?.id || null

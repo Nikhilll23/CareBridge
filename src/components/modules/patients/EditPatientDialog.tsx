@@ -51,10 +51,10 @@ export function EditPatientDialog({ patient, children }: EditPatientDialogProps)
         defaultValues: {
             firstName: patient.first_name,
             lastName: patient.last_name,
-            dateOfBirth: patient.date_of_birth.split('T')[0],
+            dateOfBirth: patient.date_of_birth ? patient.date_of_birth.split('T')[0] : '',
             gender: patient.gender,
-            contactNumber: patient.contact_number,
-            address: patient.address,
+            contactNumber: patient.contact_number || '',
+            address: patient.address || '',
             govtIdType: patient.govt_id_type || '',
             govtIdNumber: patient.govt_id_number || '',
         },

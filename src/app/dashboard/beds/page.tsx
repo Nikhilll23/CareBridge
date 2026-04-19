@@ -1,11 +1,11 @@
 import { LiveBedBoard } from '@/components/modules/beds/LiveBedBoard'
 import { PatientBedView } from '@/components/modules/beds/PatientBedView'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { supabaseAdmin } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 
 export default async function BedManagementPage() {
-    const user = await currentUser()
+    const user = await safeCurrentUser()
     if (!user) redirect('/sign-in')
 
     // Get user role

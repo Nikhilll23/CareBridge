@@ -1,10 +1,10 @@
 import { getReferrals } from '@/actions/referrals'
 import { DoctorReferralsClient } from '@/components/modules/referrals/DoctorReferralsClient'
-import { currentUser } from '@clerk/nextjs/server'
+import { safeCurrentUser } from '@/lib/auth-safe'
 import { redirect } from 'next/navigation'
 
 export default async function DoctorReferralsPage() {
-    const user = await currentUser()
+    const user = await safeCurrentUser()
     if (!user) redirect('/sign-in')
 
     // Fetch data

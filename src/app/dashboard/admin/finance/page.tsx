@@ -65,7 +65,7 @@ export default async function FinancePage() {
             <DollarSign className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
@@ -85,7 +85,7 @@ export default async function FinancePage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${approvedClaimsVal.toLocaleString()}</div>
+            <div className="text-2xl font-bold">₹{approvedClaimsVal.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Approved this month</p>
           </CardContent>
         </Card>
@@ -95,7 +95,7 @@ export default async function FinancePage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(totalRevenue * 0.85).toLocaleString()}</div>
+            <div className="text-2xl font-bold">₹{(totalRevenue * 0.85).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Estimated margin</p>
           </CardContent>
         </Card>
