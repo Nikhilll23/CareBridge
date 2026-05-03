@@ -565,6 +565,7 @@ export async function getPatientClinicalData(metriportId: string | null) {
           method: 'POST',
           headers: {
             'x-api-key': apiKey,
+            'Content-Type': 'application/json',
           },
         }
       )
@@ -572,11 +573,11 @@ export async function getPatientClinicalData(metriportId: string | null) {
       if (queryResponse.ok) {
         console.log('✅ Consolidated query initiated successfully')
       } else {
-        const error = await queryResponse.json()
-        console.log('⚠️ Query initiation response:', error)
+        const errorText = await queryResponse.text()
+        console.warn('⚠️ Query initiation failed:', queryResponse.status, errorText.substring(0, 100))
       }
     } catch (err) {
-      console.warn('Error starting consolidated query:', err)
+      console.warn('Error starting consolidated query (network error):', err instanceof Error ? err.message : err)
     }
 
     // Fetch consolidated data
@@ -591,48 +592,53 @@ export async function getPatientClinicalData(metriportId: string | null) {
       )
 
       if (consolidatedResponse.ok) {
-        const data = await consolidatedResponse.json()
+        const contentType = consolidatedResponse.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const data = await consolidatedResponse.json()
 
-        // Parse FHIR Bundle
-        if (data.entry && Array.isArray(data.entry)) {
-          data.entry.forEach((entry: any) => {
-            const resource = entry.resource
+          // Parse FHIR Bundle
+          if (data.entry && Array.isArray(data.entry)) {
+            data.entry.forEach((entry: any) => {
+              const resource = entry.resource
 
-            if (resource?.resourceType === 'AllergyIntolerance') {
-              allergies.push({
-                id: resource.id,
-                substance: resource.code?.text || resource.code?.coding?.[0]?.display || 'Unknown Allergen',
-                criticality: resource.criticality || 'unknown',
-                reaction: resource.reaction?.[0]?.manifestation?.[0]?.text || 'Not specified',
-              })
-            }
+              if (resource?.resourceType === 'AllergyIntolerance') {
+                allergies.push({
+                  id: resource.id,
+                  substance: resource.code?.text || resource.code?.coding?.[0]?.display || 'Unknown Allergen',
+                  criticality: resource.criticality || 'unknown',
+                  reaction: resource.reaction?.[0]?.manifestation?.[0]?.text || 'Not specified',
+                })
+              }
 
-            if (resource?.resourceType === 'MedicationRequest') {
-              medications.push({
-                id: resource.id,
-                medication: resource.medicationCodeableConcept?.text ||
-                  resource.medicationCodeableConcept?.coding?.[0]?.display ||
-                  'Unknown Medication',
-                status: resource.status || 'unknown',
-                dosage: resource.dosageInstruction?.[0]?.text || 'Not specified',
-              })
-            }
+              if (resource?.resourceType === 'MedicationRequest') {
+                medications.push({
+                  id: resource.id,
+                  medication: resource.medicationCodeableConcept?.text ||
+                    resource.medicationCodeableConcept?.coding?.[0]?.display ||
+                    'Unknown Medication',
+                  status: resource.status || 'unknown',
+                  dosage: resource.dosageInstruction?.[0]?.text || 'Not specified',
+                })
+              }
 
-            if (resource?.resourceType === 'Condition') {
-              conditions.push({
-                id: resource.id,
-                condition: resource.code?.text || resource.code?.coding?.[0]?.display || 'Unknown Condition',
-                clinicalStatus: resource.clinicalStatus?.coding?.[0]?.code || 'unknown',
-                onsetDate: resource.onsetDateTime || resource.recordedDate || 'Unknown',
-              })
-            }
-          })
+              if (resource?.resourceType === 'Condition') {
+                conditions.push({
+                  id: resource.id,
+                  condition: resource.code?.text || resource.code?.coding?.[0]?.display || 'Unknown Condition',
+                  clinicalStatus: resource.clinicalStatus?.coding?.[0]?.code || 'unknown',
+                  onsetDate: resource.onsetDateTime || resource.recordedDate || 'Unknown',
+                })
+              }
+            })
+          }
+        } else {
+          console.warn('⚠️ Consolidated data returned non-JSON response:', contentType)
         }
       } else {
-        console.log('⚠️ Consolidated data not yet available (this is normal for new patients)')
+        console.log(`⚠️ Consolidated data status ${consolidatedResponse.status} (normal for new sessions)`)
       }
     } catch (err) {
-      console.warn('Error fetching consolidated data:', err)
+      console.warn('Error fetching consolidated data:', err instanceof Error ? err.message : err)
     }
 
     console.log(`✅ Clinical data fetched: ${allergies.length} allergies, ${medications.length} medications, ${conditions.length} conditions`)

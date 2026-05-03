@@ -60,25 +60,23 @@ async function getDashboardStats() {
 }
 
 export default async function DashboardPage() {
-  const userProfile = await syncUser()
+  let userProfile = null
+  try {
+    userProfile = await syncUser()
+  } catch (err) {
+    console.error('Initial dashboard sync failed:', err)
+  }
 
   if (!userProfile) {
     redirect('/sign-in')
   }
 
-  // Role-based redirects
-  if (userProfile.role === 'DOCTOR') {
-    redirect('/dashboard/doctor')
-  }
-  if (userProfile.role === 'PATIENT') {
-    redirect('/dashboard/patient')
-  }
-  if (userProfile.role === 'RECEPTIONIST') {
-    redirect('/dashboard/receptionist')
-  }
-  if (userProfile.role === 'NURSE') {
-    redirect('/dashboard/nurse')
-  }
+  // Final safety checks - Middleware should catch most of these
+  if (userProfile.role === 'ADMIN') redirect('/dashboard/admin')
+  if (userProfile.role === 'DOCTOR') redirect('/dashboard/doctor')
+  if (userProfile.role === 'PATIENT') redirect('/dashboard/patient')
+  if (userProfile.role === 'RECEPTIONIST') redirect('/dashboard/receptionist')
+  if (userProfile.role === 'NURSE') redirect('/dashboard/nurse')
 
   const stats = await getDashboardStats()
 

@@ -121,7 +121,7 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
                 {roleLabels[userRole] || userRole}
               </p>
             </div>
-            {mounted && (
+            <div className="relative h-10 w-10">
               <UserButton
                 appearance={{
                   elements: {
@@ -130,10 +130,10 @@ export function Header({ userRole, userName, onMenuClick }: HeaderProps) {
                   },
                 }}
               />
-            )}
-            {!mounted && (
-              <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
-            )}
+              {!mounted && (
+                <div className="absolute inset-0 h-10 w-10 rounded-full bg-muted animate-pulse" />
+              )}
+            </div>
           </div>
         </div>
       </div>

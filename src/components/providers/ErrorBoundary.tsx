@@ -16,8 +16,6 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
 
     componentDidCatch(error: any) {
         console.warn('ErrorBoundary caught:', error?.message)
-        // Auto-recover after 100ms by resetting state
-        setTimeout(() => this.setState({ hasError: false }), 100)
     }
 
     render() {
@@ -25,16 +23,23 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
             return (
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    minHeight: '100vh', background: '#0f172a', color: 'white', flexDirection: 'column', gap: 16
+                    minHeight: '100vh', background: '#111827', color: 'white', flexDirection: 'column', gap: 24,
+                    fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>CareBridge</div>
-                    <div style={{ color: '#94a3b8', fontSize: 14 }}>Loading...</div>
-                    <div style={{
-                        width: 40, height: 40, border: '3px solid #0ea5e9',
-                        borderTopColor: 'transparent', borderRadius: '50%',
-                        animation: 'spin 0.8s linear infinite'
-                    }} />
-                    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                    <div style={{ fontSize: 32, fontWeight: 'bold', color: '#3b82f6' }}>CareBridge</div>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 18, fontWeight: '500', marginBottom: 8 }}>Something went wrong</div>
+                        <div style={{ color: '#9ca3af', fontSize: 14 }}>The dashboard encountered a client-side error.</div>
+                    </div>
+                    <button 
+                        onClick={() => this.setState({ hasError: false })}
+                        style={{
+                            padding: '10px 24px', background: '#3b82f6', color: 'white', 
+                            border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: '600'
+                        }}
+                    >
+                        Try Again
+                    </button>
                 </div>
             )
         }

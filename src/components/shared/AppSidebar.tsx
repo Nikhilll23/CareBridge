@@ -336,8 +336,10 @@ export function AppSidebar({ className, userRole, userEmail, ...props }: AppSide
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [bedAllocation, setBedAllocation] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     if (userRole === 'PATIENT' && userEmail) {
       getPatientBedAllocation(userEmail)
         .then(setBedAllocation)

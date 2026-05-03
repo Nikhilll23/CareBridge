@@ -58,9 +58,9 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
       'vu1f2223067@pvppcoe.ac.in',
     ]
 
-    if (ADMIN_EMAILS.includes(email)) {
+    if (ADMIN_EMAILS.includes(lowerEmail)) {
       role = 'ADMIN'
-    } else if (DOCTOR_EMAILS.includes(email)) {
+    } else if (DOCTOR_EMAILS.includes(lowerEmail)) {
       role = 'DOCTOR'
     } else if (lowerEmail.startsWith('nurse.') || lowerEmail.includes('nurse')) {
       role = 'NURSE'
@@ -108,7 +108,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
         lastName: existingUser.last_name || '',
         fullName: `${existingUser.first_name || ''} ${existingUser.last_name || ''}`.trim(),
         role: existingUser.role,
-        createdAt: new Date(existingUser.created_at),
+        createdAt: existingUser.created_at, // Use ISO string directly
       }
     }
 
@@ -137,7 +137,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
           id: userId, email: existingByEmail.email,
           firstName: existingByEmail.first_name || '', lastName: existingByEmail.last_name || '',
           fullName: `${existingByEmail.first_name || ''} ${existingByEmail.last_name || ''}`.trim(),
-          role: role as any, createdAt: new Date(existingByEmail.created_at),
+          role: role as any, createdAt: existingByEmail.created_at, // Use ISO string directly
         }
       }
       // Fallback — return profile from Clerk data so user isn't stuck
@@ -145,7 +145,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
         id: userId, email: email,
         firstName: firstName, lastName: lastName,
         fullName: `${firstName} ${lastName}`.trim(),
-        role: role as any, createdAt: new Date(),
+        role: role as any, createdAt: new Date().toISOString(),
       }
     }
 
@@ -180,7 +180,7 @@ export const syncUser = cache(async (): Promise<UserProfile | null> => {
       lastName: newUser.last_name || '',
       fullName: `${newUser.first_name || ''} ${newUser.last_name || ''}`.trim(),
       role: newUser.role,
-      createdAt: new Date(newUser.created_at),
+      createdAt: newUser.created_at, // Use ISO string directly
     }
   } catch (error) {
     console.warn('Sync user error:', error instanceof Error ? error.message : 'Unknown error')
@@ -211,7 +211,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       lastName: data.last_name || '',
       fullName: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
       role: data.role,
-      createdAt: new Date(data.created_at),
+      createdAt: data.created_at, // Use ISO string directly
     }
   } catch (error) {
     console.warn('Get user profile error:', error instanceof Error ? error.message : 'Unknown error')

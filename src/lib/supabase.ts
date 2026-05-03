@@ -19,10 +19,13 @@ if (typeof window === 'undefined') {
       }
 
       if (hostname.endsWith('.supabase.co')) {
-        dns.resolve4(hostname, (err, addresses) => {
-          if (err) {
+        dns.resolve4(hostname, (err: any, addresses: string[]) => {
+          if (err || !addresses || addresses.length === 0 || !addresses[0]) {
+            // GUARANTEED FALLBACK: If resolve4 fails or returns nothing, use the system resolver.
+            // This prevents ERR_INVALID_IP_ADDRESS which crashes the worker.
             return originalLookup.call(dns, hostname, options, callback)
           }
+
           if (options && options.all) {
             return callback(null, [{ address: addresses[0], family: 4 }])
           }
@@ -39,8 +42,14 @@ if (typeof window === 'undefined') {
   }
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  if (typeof window !== 'undefined') {
+    console.error('❌ Supabase environment variables are missing! Check .env.local')
+  }
+}
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {

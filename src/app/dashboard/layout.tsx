@@ -28,21 +28,23 @@ export default async function DashboardLayout({
   }
 
   const fullName = userProfile.fullName || clerkUser.firstName || 'User'
+  const userRole = String(userProfile.role || 'PATIENT')
+  const userEmail = clerkUser.primaryEmailAddress?.emailAddress || ''
 
   return (
     <div className="relative flex min-h-screen" suppressHydrationWarning>
       {/* Sidebar - Fixed on desktop */}
       <AppSidebar
         className="hidden md:flex"
-        userRole={userProfile.role}
-        userEmail={clerkUser.primaryEmailAddress?.emailAddress || ''}
+        userRole={userRole}
+        userEmail={userEmail}
       />
 
       {/* Main Content Area */}
       <div className="flex-1">
         {/* Header */}
         <Header
-          userRole={userProfile.role}
+          userRole={userRole as any}
           userName={fullName}
         />
 

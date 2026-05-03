@@ -24,7 +24,7 @@ export interface UserProfile {
   lastName: string
   fullName: string
   role: UserRole
-  createdAt: Date
+  createdAt: string // ISO Date String for better serialization
 }
 
 // Navigation Item Type
